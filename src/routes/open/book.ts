@@ -1,5 +1,5 @@
 import express, { Router } from 'express';
-import { pool, validationFunctions, checkToken } from '../../core/utilities';
+import { pool, validationFunctions } from '../../core/utilities';
 
 const bookRouter: Router = express.Router();
 
@@ -18,9 +18,8 @@ const bookRouter: Router = express.Router();
  *
  * @apiSuccess {Book} an object containing book information.
  *
- * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
- * @apiError (404: User Not Found) {String} message "User not found"
- * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
  * @apiError (400: Title Parameter Invalid) {String} message "Title parameter is invalid. A title should be a non-empty string."
  * @apiError (400: Author Parameter Invalid) {String} message "Author parameter is invalid. An author should be a non-empty string."
@@ -29,6 +28,7 @@ const bookRouter: Router = express.Router();
  * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
  *
  */
+
 /**
  * @api {get} /book Request to get all book(s).
  * @apiName GetAllBooks
@@ -45,6 +45,72 @@ bookRouter.get('/', (request, response) => {
     response.send(request.query.title);
     //response.send("Hello, World!");
 });
+
+/**
+ * @api {get} /book/isbn Request to a book by ISBN.
+ * @apiName GetBookByISBN
+ * @apiGroup Book
+ *
+ * @apiBody {number} isbn a book ISBN.
+ *
+ * @apiSuccess {Book} an object containing book information.
+ * What if no books are found?
+ * @apiError (400: Missing ISBN) {String} message "Missing required ISBN"
+ * @apiError (400: Bad ISBN) {String} message "Not a valid ISBN-13"
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ *
+ */
+bookRouter.get('/isbn', (request, response) => {});
+
+/**
+ * @api {get} /book/author Request to a book by author.
+ * @apiName GetBookByAuthor
+ * @apiGroup Book
+ *
+ * @apiBody {} author a book author.
+ *
+ * @apiSuccess {Author} an object containing books related to the given Author.
+ *
+ * @apiError (400: Missing Author) {String} message "Author name was not provided"
+ * @apiError (404: Author not found) {String} message "Author was not found"
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ */
+bookRouter.get('/:author', (request, response) => {
+    const theQuery = 'SELECT all FROM Demo WHERE author = $1';
+    let values = [request.params.author];
+
+    pool.query(theQuery, values)
+        .then((result) => {
+            response.send(result.rows);
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET /:author');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
+});
+
+/**
+ * @api {get} /book/title Request to books withing given range.
+ * @apiName GetBookByRating
+ * @apiGroup Book
+ *
+ * @apiBody {number} [rating_min=0] a book rating.
+ * @apiBody {number} [rating_max=5] a book rating.
+ *
+ * @apiSuccess {Book(s)} an object containing information of books within range of ratings.
+ *
+ * @apiError (400: Missing Parameters) {String} message "Missing required information"
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ *
+ */
+bookRouter.get('/rating', (request, response) => {});
 
 /**
  * @api {delete} /book Request to delete book(s).
@@ -77,20 +143,3 @@ bookRouter.delete('/', (request, response) => {
 });
 
 export { bookRouter };
-
-/**
- * /book?title=The%20Great%20Gatsby&rating=5
- * /book/title?title=The%20Great%20Gatsby and /book/rating?rate=5
- * 
- * 
-SELECT * WHERE (
-        title = title AND 
-        rating > rate
-    )
-
-    //title
-    "title = title"
-    //rating
-    "RATING > rate" 
-
-*/
