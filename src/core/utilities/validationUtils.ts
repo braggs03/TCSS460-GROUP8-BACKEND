@@ -48,10 +48,7 @@ function isNumber(x: any): x is number {
 
 function validateISBN(isbn: number): boolean {
     const isbnStr = isbn.toString();
-    if (isbnStr.length !== 13 && isbnStr.length !== 10) {
-        return false;
-    }
-    return true
+    return (isbnStr.length == 13 || isbnStr.length == 10) && isbn > 0;
 }
 
 const validationFunctions = {

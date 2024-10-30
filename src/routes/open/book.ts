@@ -65,7 +65,7 @@ bookRouter.get('/', (request, response) => {
  * @apiSuccess {Book} an object containing book information.
  * What if no books are found?
  * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query paremeter."
- * @apiError (400: Bad ISBN) {String} message "ISBN not valid. ISBN should be a 13 or 10 digit number."
+ * @apiError (400: Bad ISBN) {String} message "ISBN not valid. ISBN should be a positive 13 or 10 digit number."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  *
@@ -79,15 +79,14 @@ bookRouter.get('/isbn',
             });
         }
         if (
-            validationFunctions.isNumberProvided(request.query.isbn) &&
-            validationFunctions.validateISBN(request.query.isbn as unknown as number)
+            !validationFunctions.isNumberProvided(request.query.isbn) ||
+            !validationFunctions.validateISBN(request.query.isbn as unknown as number)
         ) {
-            return next();
-        } else {
             return response.status(400).send({
-                message: 'ISBN not valid. ISBN should be a 13 or 10 digit number.'
-            });
+                message: 'ISBN not valid. ISBN should be a positive 13 or 10 digit number.'
+            }); 
         }
+        return next();
     },
     async (request: Request, response: Response) => {
     const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
@@ -96,6 +95,11 @@ bookRouter.get('/isbn',
     let book = {}
     await pool.query(theQuery, values)
         .then((result) => {
+            if(result.rows.length === 0) {
+                return response.status(404).send({
+                    message: 'Book not found'
+                });
+            }
             book = result.rows[0];
         })
         .catch((error) => {
@@ -106,6 +110,9 @@ bookRouter.get('/isbn',
                 message: 'server error - contact support',
             });
         });
+
+    // if the response has already been sent, don't send it again
+    if(response.headersSent) return;
 
     const theAuthorQuery = `SELECT author_name FROM
                             BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
