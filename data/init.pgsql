@@ -139,10 +139,11 @@ FROM
             "match"
         HAVING
             COUNT("match") > 1
-    )
-    /**
-     * Insert data from RAW_BOOKS into BOOK_MAP
-     */
+    );
+
+/**
+ * Insert data from RAW_BOOKS into BOOK_MAP
+ */
 INSERT INTO
     BOOK_MAP
 SELECT
@@ -171,4 +172,16 @@ FROM
             ) as "series_pos"
         FROM
             RAW_BOOKS
-    ) AS "positions" ON isbn13 = "isbn13_series"
+    ) AS "positions" ON isbn13 = "isbn13_series";
+
+/**
+ * Remove series from title
+ */
+UPDATE BOOKS
+SET
+    title = substring(BOOKS.title for strpos(BOOKS.title, '(') -2)
+WHERE
+    (
+        title LIKE '%(%'
+        AND title LIKE '%#%'
+    )
