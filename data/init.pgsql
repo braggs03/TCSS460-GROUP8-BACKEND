@@ -29,11 +29,9 @@ CREATE TABLE
 
 CREATE TABLE
     RAW_BOOKS (
-        id INT PRIMARY KEY,
         isbn13 BIGINT,
         authors TEXT,
         publication_year INT,
-        original_title TEXT,
         title TEXT,
         rating_avg FLOAT,
         rating_count INT,
@@ -54,7 +52,6 @@ CREATE TABLE
     BOOKS (
         isbn13 BIGINT PRIMARY KEY NOT NULL,
         publication_year INT NOT NULL,
-        original_title TEXT,
         title TEXT NOT NULL,
         rating_avg FLOAT NOT NULL,
         rating_count INT NOT NULL,
@@ -75,7 +72,7 @@ CREATE TABLE
 
 CREATE TABLE
     BOOK_MAP (
-        book_isbn INT NOT NULL,
+        book_isbn BIGINT NOT NULL,
         author_id INT NOT NULL,
         series_id INT,
         series_position INT,
@@ -90,7 +87,6 @@ INSERT INTO
 SELECT
     isbn13,
     publication_year,
-    original_title,
     title,
     rating_avg,
     rating_count,
