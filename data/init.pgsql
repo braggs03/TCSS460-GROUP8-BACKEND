@@ -131,7 +131,7 @@ FROM
         FROM
             (
                 SELECT
-                    regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+') as "match"
+                    regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') as "match"
                 FROM
                     RAW_BOOKS
             )
@@ -140,3 +140,35 @@ FROM
         HAVING
             COUNT("match") > 1
     )
+    /**
+     * Insert data from RAW_BOOKS into BOOK_MAP
+     */
+INSERT INTO
+    BOOK_MAP
+SELECT
+    isbn13 as "book_isbn",
+    AUTHORS.id as "author_id",
+    SERIES.id as "series_id",
+    "positions"."series_pos"
+FROM
+    AUTHORS
+    JOIN RAW_BOOKS ON authors LIKE '%' || author_name || '%' /* author_name is a substring of authors */
+    /* series_name is a substring of title inside parenthesis. */
+    LEFT JOIN SERIES ON (
+        title LIKE '%(' || series_name || ', #%)'
+        OR title LIKE '%; ' || series_name || ', #%)'
+    )
+    LEFT JOIN (
+        /* series_pos is a number after # */
+        SELECT
+            isbn13 as "isbn13_series",
+            regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') as "series_name",
+            NULLIF(
+                (
+                    regexp_matches(title, '(?<= #)[-0-9]+', 'g')::int[]
+                ) [1],
+                -1
+            ) as "series_pos"
+        FROM
+            RAW_BOOKS
+    ) AS "positions" ON isbn13 = "isbn13_series"
