@@ -1,7 +1,16 @@
-import express, { Router } from 'express';
+import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
+import { AuthRequest } from '../auth/login';
 
 const bookRouter: Router = express.Router();
+
+const selectBookInfo = `
+SELECT
+    book_isbn, publication_year, title, series_name, series_position, rating_avg, rating_count, rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, image_url, image_small_url
+FROM
+    BOOK_MAP
+    LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
+    LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
 
 /**
  * @api {get} /book Request to get book(s).
@@ -55,13 +64,48 @@ bookRouter.get('/', (request, response) => {
  *
  * @apiSuccess {Book} an object containing book information.
  * What if no books are found?
- * @apiError (400: Missing ISBN) {String} message "Missing required ISBN"
- * @apiError (400: Bad ISBN) {String} message "Not a valid ISBN-13"
+ * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query paremeter."
+ * @apiError (400: Bad ISBN) {String} message "ISBN not valid. ISBN should be a 13 or 10 digit number."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  *
  */
-bookRouter.get('/isbn', (request, response) => {});
+
+bookRouter.get('/isbn',
+    (request: Request, response: Response, next: NextFunction) => {
+        if(request.query.isbn === undefined) {
+            return response.status(400).send({
+                message: "Missing 'isbn' query paremeter."
+            });
+        }
+        if (
+            validationFunctions.isNumberProvided(request.query.isbn) &&
+            validationFunctions.validateISBN(request.query.isbn as unknown as number)
+        ) {
+            return next();
+        } else {
+            return response.status(400).send({
+                message: 'ISBN not valid. ISBN should be a 13 or 10 digit number.'
+            });
+        }
+    },
+    (request: Request, response: Response) => {
+    const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
+    let values = [request.query.isbn];
+
+    pool.query(theQuery, values)
+        .then((result) => {
+            return response.send(result.rows[0]);
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET /isbn');
+            console.error(error);
+            return response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
+});
 
 /**
  * @api {get} /book/author Request to a book by author.
@@ -143,3 +187,4 @@ bookRouter.delete('/', (request, response) => {
 });
 
 export { bookRouter };
+

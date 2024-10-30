@@ -46,9 +46,18 @@ function isNumber(x: any): x is number {
 // for example: isNumericProvided, isValidPassword, isValidEmail, etc
 // don't forget to export any
 
+function validateISBN(isbn: number): boolean {
+    const isbnStr = isbn.toString();
+    if (isbnStr.length !== 13 && isbnStr.length !== 10) {
+        return false;
+    }
+    return true
+}
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
+    validateISBN
 };
 
 export { validationFunctions };
