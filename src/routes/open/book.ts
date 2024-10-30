@@ -89,13 +89,31 @@ bookRouter.get('/isbn',
             });
         }
     },
-    (request: Request, response: Response) => {
+    async (request: Request, response: Response) => {
     const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
     let values = [request.query.isbn];
 
-    pool.query(theQuery, values)
+    let book = {}
+    await pool.query(theQuery, values)
         .then((result) => {
-            return response.send(result.rows[0]);
+            book = result.rows[0];
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET /isbn');
+            console.error(error);
+            return response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
+
+    const theAuthorQuery = `SELECT author_name FROM
+                            BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
+                            WHERE book_isbn=$1`
+    pool.query(theAuthorQuery, values)
+        .then((result) => {
+            book['authors'] = result.rows.map((row: { author_name: string; }) => row.author_name);
+            return response.send(book);
         })
         .catch((error) => {
             //log the error
