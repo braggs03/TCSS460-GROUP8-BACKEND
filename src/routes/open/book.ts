@@ -89,48 +89,48 @@ bookRouter.get('/isbn',
         return next();
     },
     async (request: Request, response: Response) => {
-    const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
-    let values = [request.query.isbn];
+        const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
+        let values = [request.query.isbn];
 
-    let book = {}
-    await pool.query(theQuery, values)
-        .then((result) => {
-            if(result.rows.length === 0) {
-                return response.status(404).send({
-                    message: 'Book not found'
+        let book = {}
+        await pool.query(theQuery, values)
+            .then((result) => {
+                if(result.rows.length === 0) {
+                    return response.status(404).send({
+                        message: 'Book not found'
+                    });
+                }
+                book = result.rows[0];
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /isbn');
+                console.error(error);
+                return response.status(500).send({
+                    message: 'server error - contact support',
                 });
-            }
-            book = result.rows[0];
-        })
-        .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /isbn');
-            console.error(error);
-            return response.status(500).send({
-                message: 'server error - contact support',
             });
-        });
 
-    // if the response has already been sent, don't send it again
-    if(response.headersSent) return;
+        // if the response has already been sent, don't send it again
+        if(response.headersSent) return;
 
-    const theAuthorQuery = `SELECT author_name FROM
-                            BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
-                            WHERE book_isbn=$1`
-    pool.query(theAuthorQuery, values)
-        .then((result) => {
-            book['authors'] = result.rows.map((row: { author_name: string; }) => row.author_name);
-            return response.send(book);
-        })
-        .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /isbn');
-            console.error(error);
-            return response.status(500).send({
-                message: 'server error - contact support',
+        const theAuthorQuery = `SELECT author_name FROM
+                                BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
+                                WHERE book_isbn=$1`
+        pool.query(theAuthorQuery, values)
+            .then((result) => {
+                book['authors'] = result.rows.map((row: { author_name: string; }) => row.author_name);
+                return response.send(book);
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /isbn');
+                console.error(error);
+                return response.status(500).send({
+                    message: 'server error - contact support',
+                });
             });
-        });
-});
+    });
 
 /**
  * @api {get} /book/author Request to a book by author.
