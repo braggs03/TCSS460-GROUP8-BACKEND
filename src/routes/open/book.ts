@@ -217,6 +217,34 @@ bookRouter.get('/title', (request, response) => {
 bookRouter.get('/rating', (request, response) => {});
 
 /**
+ * @api {get} /book/series Request to get all series names
+ * 
+ * @apiName GetSeriesNames
+ * @apiGroup Book
+ * 
+ * @apiSuccess {String[]} an array of series names.
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
+ */
+bookRouter.get('/series', (request, response) => {});
+
+/**
+ * @api {get} /book/series/:series Request to get all books in a series.
+ * 
+ * @apiName GetBooksInSeries
+ * @apiGroup Book
+ * 
+ * @apiParam {String} series a series name.
+ * 
+ * @apiSuccess {Book[]} books an array of objects containing book information.
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
+ */
+bookRouter.get('/series/:series', (request, response) => {});
+
+/**
  * @api {delete} /book Request to delete book(s).
  * @apiName DeleteBookByAttributes
  * @apiGroup Book
