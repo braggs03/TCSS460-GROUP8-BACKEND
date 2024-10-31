@@ -150,18 +150,16 @@ bookRouter.get('/isbn',
     });
 
 /**
- * @api {get} /book/author Request to a book by author.
+ * @api {get} /book/:author Request to a get a book by author.
  * @apiName GetBookByAuthor
  * @apiGroup Book
- *
- * @apiBody {String} author a book author.
- *
- * @apiSuccess {Author} an object containing books related to the given Author.
- *
- * @apiError (400: Missing Author) {String} message "Author name was not provided"
- * @apiError (404: Author not found) {String} message "Author was not found"
- * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
- * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * 
+ * @apiParam {string} author name of author to look up
+ * 
+ * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.
  * @apiUse BookInformation
  */
 bookRouter.get('/:author', (request, response) => {
@@ -181,6 +179,21 @@ bookRouter.get('/:author', (request, response) => {
             });
         });
 });
+
+/**
+ * @api {get} /book/year Request to books with a given year.
+ * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
+ * @apiName GetBookByYear
+ * @apiGroup Book*
+ * @apiBody {number} [year_min = 0] a minimum year for the range
+ * @apiBody {number} max a maximum year for the range*
+ * @apiSuccess {Book(s)} an object containing information of books within a given range.*
+ * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
+ * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.**/
+bookRouter.get('/year', (request, response) => {});
 
 /**
  * @api {get} /book/title Request a book by title.
