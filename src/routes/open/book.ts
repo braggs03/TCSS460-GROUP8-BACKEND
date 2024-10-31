@@ -13,6 +13,26 @@ FROM
     LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
 
 /**
+ * @apiDefine BookInformation
+ *
+ * @apiSuccess (200: Success) {String} book_isbn ISBN of the book.
+ * @apiSuccess (200: Success) {Number} publication_year Year the book was published.
+ * @apiSuccess (200: Success) {String} title Title of the book.
+ * @apiSuccess (200: Success) {String} series_name Name of the series the book is a part of.
+ * @apiSuccess (200: Success) {Number} series_position Position of the book in the series.
+ * @apiSuccess (200: Success) {Number} rating_avg Average rating of the book.
+ * @apiSuccess (200: Success) {Number} rating_count Number of ratings the book has received.
+ * @apiSuccess (200: Success) {Number} rating_1_star Number of 1 star ratings the book has received.
+ * @apiSuccess (200: Success) {Number} rating_2_star Number of 2 star ratings the book has received.
+ * @apiSuccess (200: Success) {Number} rating_3_star Number of 3 star ratings the book has received.
+ * @apiSuccess (200: Success) {Number} rating_4_star Number of 4 star ratings the book has received.
+ * @apiSuccess (200: Success) {Number} rating_5_star Number of 5 star ratings the book has received.
+ * @apiSuccess (200: Success) {String} image_url URL of the image of the book.
+ * @apiSuccess (200: Success) {String} image_small_url URL of the small image of the book.
+ * @apiSuccess (200: Success) {String[]} authors Array of authors of the book.
+ */
+
+/**
  * @api {get} /book Request to get book(s).
  * @apiName GetBookByAttributes
  * @apiGroup Book
@@ -25,7 +45,6 @@ FROM
  * @apiBody {String} [year_min=1600] a book year.
  * @apiBody {String} [year_max=3000] a book year.
  *
- * @apiSuccess {Book} an object containing book information.
  *
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
@@ -62,13 +81,11 @@ bookRouter.get('/', (request, response) => {
  *
  * @apiBody {number} isbn a book ISBN.
  *
- * @apiSuccess {Book} an object containing book information.
- * What if no books are found?
  * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query paremeter."
  * @apiError (400: Bad ISBN) {String} message "ISBN not valid. ISBN should be a positive 13 digit number."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
- *
+ * @apiUse BookInformation
  */
 
 bookRouter.get('/isbn',
@@ -133,18 +150,17 @@ bookRouter.get('/isbn',
     });
 
 /**
- * @api {get} /book/author Request to a book by author.
+ * @api {get} /book/:author Request to a get a book by author.
  * @apiName GetBookByAuthor
  * @apiGroup Book
- *
- * @apiBody {} author a book author.
- *
- * @apiSuccess {Author} an object containing books related to the given Author.
- *
- * @apiError (400: Missing Author) {String} message "Author name was not provided"
- * @apiError (404: Author not found) {String} message "Author was not found"
- * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
- * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * 
+ * @apiParam {string} author name of author to look up
+ * 
+ * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.
+ * @apiUse BookInformation
  */
 bookRouter.get('/:author', (request, response) => {
     const theQuery = 'SELECT all FROM Demo WHERE author = $1';
@@ -165,7 +181,39 @@ bookRouter.get('/:author', (request, response) => {
 });
 
 /**
- * @api {get} /book/rating Request to books within a given range. If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively. If a specific rating is required, set rating_min and rating_max to the same value.
+ * @api {get} /book/year Request to books with a given year.
+ * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
+ * @apiName GetBookByYear
+ * @apiGroup Book*
+ * @apiBody {number} [year_min = 0] a minimum year for the range
+ * @apiBody {number} max a maximum year for the range*
+ * @apiSuccess {Book(s)} an object containing information of books within a given range.*
+ * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
+ * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.**/
+bookRouter.get('/year', (request, response) => {});
+
+/**
+ * @api {get} /book/title Request a book by title.
+ * @apiName GetBookByTitle
+ * @apiGroup Book
+ * 
+ * @apiBody {String} title a book title.
+ * 
+ * @apiError (400: Missing Title) {String} message "Title was not provided"
+ * @apiError (404: Title not found) {String} message "Title was not found"
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * @apiUse BookInformation
+ */
+bookRouter.get('/title', (request, response) => {
+    response.send('Hello, World!');
+});
+
+/**
+ * @api {get} /book/title Request to books withing given range.
  * @apiName GetBookByRating
  * @apiGroup Book
  *
@@ -201,66 +249,63 @@ bookRouter.get('/rating', (request, response) => {
  *
  */
 
-bookRouter.delete('/isbn',
-    (request: Request, response: Response, next: NextFunction) => {
-        if(request.query.isbn === undefined) {
-            return response.status(400).send({
-                message: "Missing 'isbn' query paremeter."
-            });
-        }
-        if (
-            !validationFunctions.isNumberProvided(request.query.isbn) ||
-            !validationFunctions.validateISBN(request.query.isbn as unknown as number)
-        ) {
-            return response.status(400).send({
-                message: 'ISBN not valid. ISBN should be a positive 13 or 10 digit number.'
-            }); 
-        }
-        return next();
-    },
-    async (request: Request, response: Response) => {
-        const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
-        let values = [request.query.isbn];
+/**
+ * @api {get} /book/series Request to get all series names
+ * 
+ * @apiName GetSeriesNames
+ * @apiGroup Book
+ * 
+ * @apiSuccess {String[]} an array of series names.
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
+ */
+bookRouter.get('/series', (request, response) => {});
 
-        let book = {}
-        await pool.query(theQuery, values)
-            .then((result) => {
-                if(result.rows.length === 0) {
-                    return response.status(404).send({
-                        message: 'Book not found'
-                    });
-                }
-                book = result.rows[0];
-            })
-            .catch((error) => {
-                //log the error
-                console.error('DB Query error on GET /isbn');
-                console.error(error);
-                return response.status(500).send({
-                    message: 'server error - contact support',
-                });
-            });
+/**
+ * @api {get} /book/series/:series Request to get all books in a series.
+ * 
+ * @apiName GetBooksInSeries
+ * @apiGroup Book
+ * 
+ * @apiParam {String} series a series name.
+ * 
+ * @apiSuccess {Book[]} books an array of objects containing book information.
+ * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
+ * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
+ * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
+ */
+bookRouter.get('/series/:series', (request, response) => {});
 
-        // if the response has already been sent, don't send it again
-        if(response.headersSent) return;
-
-        const theAuthorQuery = `SELECT author_name FROM
-                                BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
-                                WHERE book_isbn=$1`
-        pool.query(theAuthorQuery, values)
-            .then((result) => {
-                book['authors'] = result.rows.map((row: { author_name: string; }) => row.author_name);
-                return response.send(book);
-            })
-            .catch((error) => {
-                //log the error
-                console.error('DB Query error on GET /isbn');
-                console.error(error);
-                return response.status(500).send({
-                    message: 'server error - contact support',
-                });
-            });
-    });
+/**
+ * @api {delete} /book Request to delete book(s).
+ * @apiName DeleteBookByAttributes
+ * @apiGroup Book
+ *
+ * @apiBody {String} [isbn] a book ISBN.
+ * @apiBody {String} [title] a book title.
+ * @apiBody {String} [author] a book author.
+ * @apiBody {String} [rating_min=0] a book rating.
+ * @apiBody {String} [rating_max=5] a book rating.
+ * @apiBody {String} [year_min=1600] a book year.
+ * @apiBody {String} [year_max=3000] a book year.
+ *
+ * @apiSuccess {Book} an object containing book information.
+ *
+ * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
+ * @apiError (404: User Not Found) {String} message "User not found"
+ * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
+ * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
+ * @apiError (400: Title Parameter Invalid) {String} message "Title parameter is invalid. A title should be a non-empty string."
+ * @apiError (400: Author Parameter Invalid) {String} message "Author parameter is invalid. An author should be a non-empty string."
+ * @apiError (400: Rating Parameter Invalid) {String} message "Rating parameter is invalid. A rating should be a number between 0 and 5. Additionally, the minimum rating should be less than or equal to the maximum rating."
+ * @apiError (400: Year Parameter Invalid) {String} message "Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year."
+ * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
+ *
+ */
+bookRouter.delete('/', (request, response) => {
+    response.send('Hello, World!');
+});
 
 export { bookRouter };
 
