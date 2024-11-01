@@ -87,7 +87,6 @@ bookRouter.get('/', (request, response) => {
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiUse BookInformation
  */
-
 bookRouter.get('/isbn',
     (request: Request, response: Response, next: NextFunction) => {
         if(request.query.isbn === undefined) {
@@ -178,7 +177,7 @@ bookRouter.get('/:author', (request, response) => {
                 message: 'server error - contact support',
             });
         });
-});
+    });
 
 /**
  * @api {get} /book/year Request to books with a given year.
@@ -213,7 +212,7 @@ bookRouter.get('/title', (request, response) => {
 });
 
 /**
- * @api {get} /book/title Request to books withing given range.
+ * @api {get} /book/rating Request to books within a given range. If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively. If a specific rating is required, set rating_min and rating_max to the same value.
  * @apiName GetBookByRating
  * @apiGroup Book
  *
