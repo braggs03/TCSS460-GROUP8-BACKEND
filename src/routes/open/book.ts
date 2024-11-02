@@ -213,7 +213,8 @@ bookRouter.get('/title', (request, response) => {
 });
 
 /**
- * @api {get} /book/rating Request to books within a given range. If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively. If a specific rating is required, set rating_min and rating_max to the same value.
+ * @api {get} /book/rating Request to books within a given range. 
+ * @apiDescription If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively. If a specific rating is required, set rating_min and rating_max to the same value.
  * @apiName GetBookByRating
  * @apiGroup Book
  *
