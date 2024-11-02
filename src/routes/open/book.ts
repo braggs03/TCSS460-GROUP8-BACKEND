@@ -10,7 +10,8 @@ SELECT
 FROM
     BOOK_MAP
     LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
-    LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
+    LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id
+    LEFT JOIN RATINGS ON BOOK_MAP.book_isbn = RATINGS.book_isbn`;
 
 /**
  * @apiDefine BookInformation
@@ -163,19 +164,46 @@ bookRouter.get('/isbn',
  * @apiUse BookInformation
  */
 bookRouter.get('/:author', (request, response) => {
-    const theQuery = 'SELECT all FROM Demo WHERE author = $1';
-    let values = [request.params.author];
+    const authorName = request.params.author;
+    if (!authorName) {
+        return response.status(400).send({
+            message: "Missing 'author' parameter."
+        });
+    }
 
-    pool.query(theQuery, values)
+    const theQuery = `
+        SELECT author_name 
+        FROM AUTHORS 
+        WHERE author_name ILIKE $1 
+        LIMIT 1;`;
+    
+    pool.query(theQuery, [authorName])
         .then((result) => {
-            response.send(result.rows);
+            if (result.rows.length === 0) {
+                return response.status(404).send({
+                    message: 'Author not found.'
+                });
+            } 
+
+            const author = result.rows[0];
+            const booksQuery = `
+                SELECT BOOKS.title, BOOKS.publication_year, BOOKS.isbn13 
+                FROM BOOKS 
+                INNER JOIN BOOK_MAP ON BOOKS.isbn13 = BOOK_MAP.book_isbn 
+                WHERE BOOK_MAP.author_id = $1;`;
+
+            return pool.query(booksQuery, [author.id])
+            .then((booksResult) => {
+                response.send({
+                    author: author.author_name,
+                    books: booksResult.rows,
+                });
+            });
         })
         .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /:author');
-            console.error(error);
+            console.error('DB Query error on GET /book/:author', error);
             response.status(500).send({
-                message: 'server error - contact support',
+                message: 'Server error - contact support.',
             });
         });
     });
@@ -203,7 +231,7 @@ bookRouter.get('/year', (request, response) => {});
  * @apiQuery {string} title the book title to search
  * 
  * @apiError (400: Missing Title) {String} message "Title was not provided"
- * @apiError (404: Title not found) {String} message "Title was not found"
+ * @apiError (404: Title not found) {String} message "No books found with matching title"
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiUse BookInformation

@@ -15,7 +15,7 @@ CREATE TABLE
         Username VARCHAR(255) NOT NULL UNIQUE,
         Email VARCHAR(255) NOT NULL UNIQUE,
         Phone VARCHAR(15) NOT NULL UNIQUE,
-        Account_Role int NOT NULL
+        Account_Role int NOT NULL CHECK (Account_Role >= 0 AND Account_Role <=2)
     );
 
 CREATE TABLE
@@ -25,6 +25,8 @@ CREATE TABLE
         Salted_Hash VARCHAR(255) NOT NULL,
         salt VARCHAR(255),
         FOREIGN KEY (Account_ID) REFERENCES Account (Account_ID)
+        ON UPDATE CASCADE
+        ON DELETE CASCADE
     );
 
 CREATE TABLE
@@ -51,24 +53,23 @@ FROM
 CREATE TABLE
     BOOKS (
         isbn13 BIGINT PRIMARY KEY NOT NULL,
-        publication_year INT NOT NULL,
+        publication_year INT NOT NULL CHECK (publication_year > 0),
         title TEXT NOT NULL,
-        rating_avg FLOAT NOT NULL,
-        rating_count INT NOT NULL,
-        rating_1_star INT NOT NULL,
-        rating_2_star INT NOT NULL,
-        rating_3_star INT NOT NULL,
-        rating_4_star INT NOT NULL,
-        rating_5_star INT NOT NULL,
         image_url TEXT,
         image_small_url TEXT
     );
 
 CREATE TABLE
-    AUTHORS (id SERIAL PRIMARY KEY, author_name TEXT NOT NULL);
+    AUTHORS (
+        id SERIAL PRIMARY KEY, 
+        author_name TEXT NOT NULL
+    );
 
 CREATE TABLE
-    SERIES (id SERIAL PRIMARY KEY, series_name TEXT NOT NULL);
+    SERIES (
+        id SERIAL PRIMARY KEY,
+        series_name TEXT NOT NULL
+    );
 
 CREATE TABLE
     BOOK_MAP (
@@ -77,8 +78,25 @@ CREATE TABLE
         series_id INT,
         series_position INT,
         FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13),
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
         FOREIGN KEY (author_id) REFERENCES AUTHORS (id),
         FOREIGN KEY (series_id) REFERENCES SERIES (id)
+    );
+
+CREATE TABLE
+    RATINGS (
+        book_isbn BIGINT NOT NULL,
+        rating_avg FLOAT NOT NULL CHECK (rating_avg BETWEEN 1 AND 5),
+        rating_count INT NOT NULL CHECK (rating_count >= 0),
+        rating_1_star INT NOT NULL CHECK (rating_1_star >= 0),
+        rating_2_star INT NOT NULL CHECK (rating_2_star >= 0),
+        rating_3_star INT NOT NULL CHECK (rating_3_star >= 0),
+        rating_4_star INT NOT NULL CHECK (rating_4_star >= 0),
+        rating_5_star INT NOT NULL CHECK (rating_5_star >= 0),
+        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13)
+        ON DELETE CASCADE
+        ON UPDATE CASCADE
     );
 
 /* Insert data from RAW_BOOKS into BOOKS */
@@ -88,15 +106,22 @@ SELECT
     isbn13,
     publication_year,
     title,
+    image_url,
+    image_small_url
+FROM
+    RAW_BOOKS;
+
+INSERT INTO
+    RATINGS 
+SELECT
+    isbn13,
     rating_avg,
     rating_count,
     rating_1_star,
     rating_2_star,
     rating_3_star,
     rating_4_star,
-    rating_5_star,
-    image_url,
-    image_small_url
+    rating_5_star
 FROM
     RAW_BOOKS;
 
