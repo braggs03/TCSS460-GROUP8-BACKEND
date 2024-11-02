@@ -172,7 +172,7 @@ bookRouter.get('/:author', (request, response) => {
     }
 
     const theQuery = `
-        SELECT author_name 
+        SELECT author_id, author_name 
         FROM AUTHORS 
         WHERE author_name ILIKE $1 
         LIMIT 1;`;
@@ -217,11 +217,87 @@ bookRouter.get('/:author', (request, response) => {
  * @apiBody {number} max a maximum year for the range*
  * @apiSuccess {Book(s)} an object containing information of books within a given range.*
  * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
- * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
+ * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 0 and the current year. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
  * @apiError (404: Author not found) {string} message Author was not found.**/
-bookRouter.get('/year', (request, response) => {});
+bookRouter.get('/year', (request, response) => {
+    const year_min = parseInt(request.query.year_min as string) || 0;
+    const year_max = parseInt(request.query.year_max as string);
+    
+    if (!year_max) {
+        return response.status(400).send({
+            message: "Missing max year parameter."
+        })
+    }
+
+    const current_year: number = new Date().getFullYear();
+    if (year_min < 0 || year_max > current_year) {
+        return response.status(400).send({
+            message: "Year range is invalid. A year may not be below 0 or greater than the current year."
+        });
+    }
+
+    const query =`
+        SELECT b.isbn13, b.title, b.publication_year, b.image_url, 
+            b.image_small_url, r.rating_avg, r.rating_count, 
+            STRING_AGG(a.author_name, ', ') as authors,
+            s.series_name, bm.series_position
+        FROM BOOKS b
+        LEFT JOIN RATINGS r ON b.isbn13 = r.book_isbn
+        LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
+        LEFT JOIN AUTHORS a ON bm.author_id = a.id
+        LEFT JOIN SERIES s ON bm.series_id = s.id
+        WHERE b.publication_year BETWEEN $1 AND $2
+        GROUP BY b.isbn13
+        ORDER BY b.publication_year DESC, b.title ASC;
+
+    `;
+
+    pool.query(query, [year_min, year_max])
+    .then(result => {
+        if (result.rows.length === 0) {
+            return response.status(404).send({
+                message: `No books found between years ${year_min} and ${year_max}.`
+            });
+        }
+
+        const books = result.rows.map(book => ({
+            isbn13: book.isbn13,
+            title: book.title,
+            publication_year: book.publications_year,
+            authors: book.authors,
+            image_url: book.image_url,
+            image_small_url: book.image_small_url,
+            rating: {
+                average: book.rating_avg,
+                count: book.rating_count
+            },
+            ...(book.series_name && {
+                series: {
+                    name: book.series_name,
+                    position: book.series_position
+                }
+            })
+
+        }));
+        
+        response.send({
+            count: books.length,
+            years: {
+                min: year_min,
+                max: year_max
+            },
+            books: books
+        });
+    })
+    .catch(error => {
+        console.error('DB Query error on GET /book/year', error);
+        response.status(500).send({
+            message: 'Server error - contact support.'
+        });
+    });
+});
 
 /**
  * @api {get} /book/title Request a book by title.
