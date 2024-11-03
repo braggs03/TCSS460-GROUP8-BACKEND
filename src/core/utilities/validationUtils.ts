@@ -51,10 +51,20 @@ function validateISBN(isbn: number): boolean {
     return (isbnStr.length == 13 || isbnStr.length == 10) && isbn > 0;
 }
 
+function validateYear(min: number, max: number): boolean {
+    const isMinValid = min >= 1600 && min <= 3000;
+    const isMaxValid = max >= 1600 && max <= 3000;
+    const isRangeValid = min <= max;
+    return isMinValid && isMaxValid && isRangeValid;
+}
+
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
-    validateISBN
+    validateISBN,
+    validateYear
 };
+
 
 export { validationFunctions };

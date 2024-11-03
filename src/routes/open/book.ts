@@ -70,8 +70,21 @@ FROM
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
 bookRouter.get('/', (request, response) => {
-    response.send(request.query.title);
-    //response.send("Hello, World!");
+    const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP';
+    pool.query(theQuery)
+        .then((result) => {
+            response.send({
+                entries: result.rows,
+            });
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET all');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
 });
 
 /**
@@ -81,7 +94,7 @@ bookRouter.get('/', (request, response) => {
  *
  * @apiQuery {number} isbn a book ISBN to look up.
  *
- * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query paremeter.
+ * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
  * @apiError (404: ISBN Not Found) {String} message Book with given ISBN not found.
  * @apiError (400: Bad ISBN) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
  * @apiError (403: Invalid JWT) {String} message Provided JWT is invalid. Please sign-in again.
@@ -150,6 +163,54 @@ bookRouter.get('/isbn',
     });
 
 /**
+ * @api {get} /book/year Request to books with a given year.
+ * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
+ * @apiName GetBookByYear
+ * @apiGroup Book
+ * @apiBody {number} [year_min = 1600] a minimum year for the range
+ * @apiBody {number} max a maximum year for the range*
+ * @apiSuccess {Book(s)} an object containing information of books within a given range.*
+ * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
+ * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.**/
+bookRouter.get('/year', (request: Request, response: Response, next: NextFunction) => {
+    //default min is 1600
+    const yearMin = parseInt(request.query.year_min as string) || 1600;
+    const yearMax = parseInt(request.query.year_max as string);
+
+    if (isNaN(yearMax)) {
+        return response.status(400).send({ message: '"year_max" query parameter is missing or not a number.' });
+    }
+    
+    if (!validationFunctions.validateYear(yearMin, yearMax)) {
+        return response.status(400).send({
+            message: 'Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.',
+        });
+    }
+
+    const theQuery = `
+        SELECT isbn13, title, publication_year, rating_avg, rating_count, image_url
+        FROM BOOKS
+        WHERE publication_year BETWEEN $1 AND $2
+    `;
+    
+    pool.query(theQuery, [yearMin, yearMax])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                return response.status(404).send({ message: 'No books found for the given year range.' });
+            }
+            response.send({ books: result.rows });
+        })
+        .catch((error) => {
+            console.error('DB Query error on GET by year');
+            console.error(error);
+            response.status(500).send({ message: 'server error - contact support' });
+        });
+});
+
+/**
  * @api {get} /book/:author Request to a get a book by author.
  * @apiName GetBookByAuthor
  * @apiGroup Book
@@ -162,13 +223,15 @@ bookRouter.get('/isbn',
  * @apiError (404: Author not found) {string} message Author was not found.
  * @apiUse BookInformation
  */
-bookRouter.get('/:author', (request, response) => {
-    const theQuery = 'SELECT all FROM Demo WHERE author = $1';
+bookRouter.get('/:author', (request: Request, response: Response, next: NextFunction) => {
+    const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP'; //only temp
     let values = [request.params.author];
 
-    pool.query(theQuery, values)
+    pool.query(theQuery)
         .then((result) => {
-            response.send(result.rows);
+            response.send({
+                entries: result.rows,
+            });
         })
         .catch((error) => {
             //log the error
@@ -180,20 +243,8 @@ bookRouter.get('/:author', (request, response) => {
         });
     });
 
-/**
- * @api {get} /book/year Request to books with a given year.
- * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
- * @apiName GetBookByYear
- * @apiGroup Book
- * @apiBody {number} [year_min = 0] a minimum year for the range
- * @apiBody {number} max a maximum year for the range*
- * @apiSuccess {Book(s)} an object containing information of books within a given range.*
- * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
- * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
- * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
- * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
- * @apiError (404: Author not found) {string} message Author was not found.**/
-bookRouter.get('/year', (request, response) => {});
+
+
 
 /**
  * @api {get} /book/title Request a book by title.
