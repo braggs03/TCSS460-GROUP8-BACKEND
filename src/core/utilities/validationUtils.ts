@@ -57,11 +57,21 @@ function validateRatings(rating_min: number, rating_max: number) {
     return rating_min >= RATING_MIN && rating_min <= RATING_MAX && rating_max >= RATING_MIN && rating_max <= RATING_MAX && rating_min <= rating_max;
 }
 
+function validateYear(min: number, max: number): boolean {
+    const isMinValid = min >= 1600 && min <= 3000;
+    const isMaxValid = max >= 1600 && max <= 3000;
+    const isRangeValid = min <= max;
+    return isMinValid && isMaxValid && isRangeValid;
+}
+
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
     validateISBN,
-    validateRatings
+    validateRatings,
+    validateYear
 };
+
 
 export { validationFunctions };
