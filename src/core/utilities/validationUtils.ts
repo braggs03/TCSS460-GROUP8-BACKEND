@@ -1,3 +1,5 @@
+import { RATING_MAX, RATING_MIN } from "./constants";
+
 /**
  * Checks the parameter to see if it is a a String.
  *
@@ -51,10 +53,15 @@ function validateISBN(isbn: number): boolean {
     return (isbnStr.length == 13 || isbnStr.length == 10) && isbn > 0;
 }
 
+function validateRatings(rating_min: number, rating_max: number) {
+    return rating_min >= RATING_MIN && rating_min <= RATING_MAX && rating_max >= RATING_MIN && rating_max <= RATING_MAX && rating_min <= rating_max;
+}
+
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
-    validateISBN
+    validateISBN,
+    validateRatings
 };
 
 export { validationFunctions };

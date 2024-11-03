@@ -1,5 +1,6 @@
 import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
+import { RATING_MAX, RATING_MAX_DEFAULT, RATING_MIN, RATING_MIN_DEFAULT } from '../../core/utilities/constants';
 import { AuthRequest } from '../auth/login';
 
 const bookRouter: Router = express.Router();
@@ -150,37 +151,6 @@ bookRouter.get('/isbn',
     });
 
 /**
- * @api {get} /book/:author Request to a get a book by author.
- * @apiName GetBookByAuthor
- * @apiGroup Book
- * 
- * @apiParam {string} author name of author to look up
- * 
- * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
- * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
- * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
- * @apiError (404: Author not found) {string} message Author was not found.
- * @apiUse BookInformation
- */
-bookRouter.get('/:author', (request, response) => {
-    const theQuery = 'SELECT all FROM Demo WHERE author = $1';
-    let values = [request.params.author];
-
-    pool.query(theQuery, values)
-        .then((result) => {
-            response.send(result.rows);
-        })
-        .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /:author');
-            console.error(error);
-            response.status(500).send({
-                message: 'server error - contact support',
-            });
-        });
-    });
-
-/**
  * @api {get} /book/year Request to books with a given year.
  * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
  * @apiName GetBookByYear
@@ -223,16 +193,53 @@ bookRouter.get('/title', (request, response) => {
  *
  * @apiSuccess {Book(s)} an object containing information of books within the range of ratings.
  *
- * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied"
- * @apiError (400: Bad Min Rating) {String} message "Min rating is not a valid rating, should be a floating point from 1 to 5."
- * @apiError (400: Bad Max Rating) {String} message "Max rating is not a valid rating, should be a floating point from 1 to 5."
- * @apiError (400: Min Rating Greater Than Max Rating) {String} message "The provided minimum rating is greater than the maximum rating."
+ * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
+ * @apiError (400: Bad maximum or minimum rating.) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  */
-bookRouter.get('/rating', (request, response) => {
+bookRouter.get('/rating', 
+    (request: Request, response: Response, next: NextFunction) => {
+        if (request.query.rating_min === undefined && request.query.rating_max === undefined) {
+            response.status(400).send({
+                message: "Missing maximum and minimum rating."
+            });
+        } else {
+            const rating_min = request.query.rating_min === undefined ? request.query.rating_min : RATING_MIN_DEFAULT;
+            const rating_max = request.query.rating_max === undefined ? request.query.rating_max : RATING_MAX_DEFAULT;
+            if (validationFunctions.isNumberProvided(rating_min) && validationFunctions.isNumberProvided(rating_max) && validationFunctions.validateRatings(+rating_min, +rating_max)) {
+                request.query.rating_min = rating_min.toString();
+                request.query.rating_max = rating_max.toString();
+                next();
+            } else { 
+                return response.status(400).send({
+                    message: 'Bad maximum or minimum rating.',
+                });
+            }
+        }
+    },
+    (request: Request, response: Response) => {
+        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2'
+        
+        let values = [
+            request.query.rating_min, 
+            request.query.rating_max
+        ];
 
-});
+        pool.query(query, values)
+            .then((result) => {
+                response.send(result.rows);
+            })
+            .catch((error) => {
+                //log the error
+                console.error('DB Query error on GET /ratings');
+                console.error(error);
+                response.status(500).send({
+                    message: 'server error - contact support',
+                });
+            });
+    }
+);
 
 /**
  * @api {get} /book/isbn Request to get a book by ISBN.
@@ -277,6 +284,38 @@ bookRouter.get('/series', (request, response) => {});
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
 bookRouter.get('/series/:series', (request, response) => {});
+
+/**
+ * @api {get} /book/:author Request to a get a book by author.
+ * @apiName GetBookByAuthor
+ * @apiGroup Book
+ * 
+ * @apiParam {string} author name of author to look up
+ * 
+ * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
+ * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
+ * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ * @apiError (404: Author not found) {string} message Author was not found.
+ * @apiUse BookInformation
+ */
+bookRouter.get('/:author', (request, response) => {
+    const theQuery = 'SELECT all FROM Demo WHERE author = $1';
+    let values = [request.params.author];
+
+    pool.query(theQuery, values)
+        .then((result) => {
+            response.send(result.rows);
+        })
+        .catch((error) => {
+            //log the error
+            console.error('DB Query error on GET /:author');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        });
+    });
+
 
 /**
  * @api {delete} /book Request to delete book(s).

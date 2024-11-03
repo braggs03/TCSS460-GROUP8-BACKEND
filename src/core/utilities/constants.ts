@@ -1,0 +1,8 @@
+// RATING CONSTANTS
+
+const RATING_MAX: number = 5;
+const RATING_MIN: number = 1;
+const RATING_MAX_DEFAULT: number = 5;
+const RATING_MIN_DEFAULT: number = 1;
+
+export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT }
