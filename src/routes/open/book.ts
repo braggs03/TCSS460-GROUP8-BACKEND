@@ -120,7 +120,7 @@ bookRouter.get('/isbn',
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
- * @apiError (404: Year not found) {string} message No books associated with given year(s)
+ * @apiError (404: Year not found) {string} message No books found for the given year range.
  */
 bookRouter.get('/year', (request: Request, response: Response, next: NextFunction) => {
     //default min is 1600
@@ -156,7 +156,7 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
             if (result.rows.length === 0) {
                 return response.status(404).send({ message: 'No books found for the given year range.' });
             }
-            response.send({ books: result.rows });
+            response.send(result.rows );
         })
         .catch((error) => {
             console.error('DB Query error on GET by year');
@@ -211,7 +211,7 @@ bookRouter.get('/title', (request, response) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({ message: 'Title was not found' });
             }
-            response.send({ books: result.rows });
+            response.send(result.rows);
         })
         .catch((error) => {
             console.error('DB Query error on GET by title');
@@ -331,7 +331,7 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
     pool.query(theQuery)
         .then((result) => {
             response.send({
-                entries: result.rows,
+                books: result.rows,
             });
         })
         .catch((error) => {
@@ -373,9 +373,9 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
  * @api {get} /book Request to get all book(s).
  * @apiName GetAllBooks
  * @apiGroup Book
- * @apiBody {number} [limit=10] limit a limit value. 
- * @apiBody {number} [offset=0] offset a offset value.
- * @apiSuccess {Book[]} success an array of objects containing book information.
+ * @apiQuery {number} [limit=10] limit a limit value. 
+ * @apiQuery {number} [offset=0] offset a offset value.
+ * @apiUse BookInformation
  *
  * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
  * @apiError (404: User Not Found) {String} message "User not found"
@@ -405,9 +405,9 @@ bookRouter.get('/', (request: Request, response: Response, next: NextFunction) =
 
     pool.query(theQuery, values)
         .then((result) => {
-            response.send({
-                entries: result.rows,
-            });
+            response.send(
+                result.rows,
+            );
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
