@@ -64,12 +64,16 @@ function validateYear(min: number, max: number): boolean {
     return isMinValid && isMaxValid && isRangeValid;
 }
 
+function validateTitle(title: String) : boolean {
+    return title.trim().length > 0;
+}
 
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
     validateISBN,
     validateRatings,
+    validateTitle,
     validateYear
 };
 
