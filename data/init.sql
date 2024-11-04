@@ -76,9 +76,9 @@ CREATE TABLE
         author_id INT NOT NULL,
         series_id INT,
         series_position INT,
-        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13),
-        FOREIGN KEY (author_id) REFERENCES AUTHORS (id),
-        FOREIGN KEY (series_id) REFERENCES SERIES (id)
+        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13) ON DELETE CASCADE,
+        FOREIGN KEY (author_id) REFERENCES AUTHORS (id) ON DELETE CASCADE,
+        FOREIGN KEY (series_id) REFERENCES SERIES (id) ON DELETE SET NULL
     );
 
 /* Insert data from RAW_BOOKS into BOOKS */
