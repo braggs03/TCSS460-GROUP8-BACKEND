@@ -41,7 +41,7 @@ FROM
  * @apiQuery {number} isbn a book ISBN to look up.
  *
  * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
- * @apiError (404: ISBN Not Found) {String} message Book with given ISBN not found.
+ * @apiError (404: ISBN Not Found) {String} message Book not found.
  * @apiError (400: Bad ISBN) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
  * @apiError (403: Invalid JWT) {String} message Provided JWT is invalid. Please sign-in again.
  * @apiError (401: Authorization Token is not supplied) {String} message No JWT provided, please sign in.
@@ -51,7 +51,7 @@ bookRouter.get('/isbn',
     (request: Request, response: Response, next: NextFunction) => {
         if(request.query.isbn === undefined) {
             return response.status(400).send({
-                message: "Missing 'isbn' query paremeter."
+                message: "Missing 'isbn' query parameter."
             });
         }
         if (
@@ -66,14 +66,14 @@ bookRouter.get('/isbn',
     },
     async (request: Request, response: Response) => {
         const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
-        let values = [request.query.isbn];
+        const values = [request.query.isbn];
 
         let book = {}
         await pool.query(theQuery, values)
             .then((result) => {
                 if(result.rows.length === 0) {
                     return response.status(404).send({
-                        message: 'Book not found'
+                        message: 'Book not found.'
                     });
                 }
                 book = result.rows[0];
@@ -122,7 +122,7 @@ bookRouter.get('/isbn',
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
  * @apiError (404: Year not found) {string} message No books found for the given year range.
  */
-bookRouter.get('/year', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/year', (request: Request, response: Response) => {
     //default min is 1600
     const yearMin = parseInt(request.query.year_min as string) || 1600;
     const yearMax = parseInt(request.query.year_max as string);
@@ -324,9 +324,9 @@ bookRouter.get('/series/:series', (request, response) => {});
  * @apiError (404: Author not found) {string} message Author was not found.
  * @apiUse BookInformation
  */
-bookRouter.get('/:author', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/:author', (request: Request, response: Response) => {
     const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP'; //only temp
-    let values = [request.params.author];
+    const values = [request.params.author];
 
     pool.query(theQuery)
         .then((result) => {
@@ -382,7 +382,7 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
  * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
-bookRouter.get('/', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/', (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
     const limit: number = request.query.limit ? +request.query.limit : LIMIT_DEFAULT;
