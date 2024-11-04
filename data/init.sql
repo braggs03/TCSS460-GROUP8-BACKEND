@@ -100,7 +100,7 @@ INSERT INTO
     BOOKS
 SELECT
     isbn13,
-    publication_year,
+    ABS(publication_year)
     title,
     rating_avg,
     rating_count,
