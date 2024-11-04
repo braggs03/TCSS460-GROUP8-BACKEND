@@ -75,6 +75,10 @@ function validatePagination(request: Request) {
             ? request.query.offset
             : OFFSET_DEFAULT.toString();
 }
+            
+function validateTitle(title: string) : boolean {
+    return title.trim().length > 0;
+}
 
 const validationFunctions = {
     isStringProvided,
@@ -82,7 +86,8 @@ const validationFunctions = {
     validateISBN,
     validateRatings,
     validateYear,
-    validatePagination
+    validatePagination,
+    validateTitle,
 };
 
 
