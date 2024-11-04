@@ -6,7 +6,7 @@ import { AuthRequest } from '../auth/login';
 const bookRouter: Router = express.Router();
 
 const selectBookInfo = `
-SELECT
+SELECT DISTINCT
     book_isbn, publication_year, title, series_name, series_position, rating_avg, rating_count, rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, image_url, image_small_url
 FROM
     BOOK_MAP
@@ -113,14 +113,14 @@ bookRouter.get('/isbn',
  * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
  * @apiName GetBookByYear
  * @apiGroup Book
- * @apiBody {number} [year_min = 1600] a minimum year for the range
- * @apiBody {number} max a maximum year for the range*
- * @apiSuccess {Book(s)} an object containing information of books within a given range.*
- * @apiError (400: Missing Year) {string} message 'year' query parameter is missing.
+ * @apiQuery {number} [year_min = 1600] a minimum year for the range
+ * @apiQuery {number} max a maximum year for the range
+ * @apiUse BookInformation
+ * @apiError (400: Missing Year) {string} message 'year_max' query parameter is missing or not a number.
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
- * @apiError (404: Author not found) {string} message Author was not found.
+ * @apiError (404: Year not found) {string} message No books associated with given year(s)
  */
 bookRouter.get('/year', (request: Request, response: Response, next: NextFunction) => {
     //default min is 1600
@@ -128,7 +128,7 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
     const yearMax = parseInt(request.query.year_max as string);
 
     if (isNaN(yearMax)) {
-        return response.status(400).send({ message: '"year_max" query parameter is missing or not a number.' });
+        return response.status(400).send({ message: "'year_max' query parameter is missing or not a number." });
     }
     
     if (!validationFunctions.validateYear(yearMin, yearMax)) {
@@ -137,11 +137,19 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
         });
     }
 
-    const theQuery = `
-        SELECT isbn13, title, publication_year, rating_avg, rating_count, image_url
-        FROM BOOKS
-        WHERE publication_year BETWEEN $1 AND $2
-    `;
+    const theQuery = `SELECT b.isbn13 AS book_isbn,b.publication_year,b.title,s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,
+    b.rating_3_star,b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
+    ARRAY_AGG(DISTINCT a.author_name) AS authors
+    FROM
+    BOOKS b
+        LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
+        LEFT JOIN SERIES s ON bm.series_id = s.id
+        LEFT JOIN BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
+        LEFT JOIN AUTHORS a ON bm_author.author_id = a.id
+    WHERE
+        b.publication_year BETWEEN $1 AND $2
+    GROUP BY
+        b.isbn13, s.series_name, bm.series_position;`;
     
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
@@ -156,14 +164,16 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
             response.status(500).send({ message: 'server error - contact support' });
         });
 });
+  
+
 
 /**
  * @api {get} /book/title Request a book by title.
  * @apiName GetBookByTitle
  * @apiGroup Book
- * 
+ *
  * @apiQuery {string} title the book title to search
- * 
+ *
  * @apiError (400: Missing Title) {String} message Title was not provided
  * @apiError (404: Title not found) {String} message Title was not found
  * @apiError (403: Invalid JWT) {String} message Provided JWT is invalid. Please sign-in again.
@@ -171,7 +181,43 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
  * @apiUse BookInformation
  */
 bookRouter.get('/title', (request, response) => {
-    response.send('Hello, World!');
+    const titleQuery = request.query.title as string;
+    if (!validationFunctions.validateTitle(titleQuery)) {
+        return response.status(400).send({
+            message: 'Title was not provided',
+        });
+    }
+    const theQuery = `
+    SELECT b.isbn13 AS book_isbn, b.publication_year, b.title, s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,b.rating_3_star,
+        b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
+        ARRAY_AGG(DISTINCT a.author_name) AS authors
+    FROM
+        BOOKS b
+    LEFT JOIN
+        BOOK_MAP bm ON b.isbn13 = bm.book_isbn
+    LEFT JOIN
+        SERIES s ON bm.series_id = s.id
+    LEFT JOIN
+        BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
+    LEFT JOIN
+        AUTHORS a ON bm_author.author_id = a.id
+    WHERE
+        b.title ILIKE '%' || $1 || '%'  
+    GROUP BY
+        b.isbn13, s.series_name, bm.series_position;`;
+
+    pool.query(theQuery,[titleQuery])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                return response.status(404).send({ message: 'Title was not found' });
+            }
+            response.send({ books: result.rows });
+        })
+        .catch((error) => {
+            console.error('DB Query error on GET by title');
+            console.error(error);
+            response.status(500).send({ message: 'server error - contact support' });
+        });
 });
 
 /**
@@ -183,40 +229,43 @@ bookRouter.get('/title', (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book. 
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- *
+ * @apiBody {number} [limit=10] a minimum rating required for a book. 
+ * @apiBody {number} [offset=0] a maximum rating required for a book.
+ * 
  * @apiSuccess {Book(s)} success object containing information of books within the range of ratings.
- *
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
- * @apiError (400: Bad maximum or minimum rating.) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
+ * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  */
 bookRouter.get('/rating', 
     (request: Request, response: Response, next: NextFunction) => {
+        validationFunctions.validatePagination(request);
         if (request.query.rating_min === undefined && request.query.rating_max === undefined) {
             response.status(400).send({
                 message: "Missing maximum and minimum rating."
             });
         } else {
-            const rating_min = request.query.rating_min !== undefined ? request.query.rating_min : RATING_MIN_DEFAULT;
-            const rating_max = request.query.rating_max !== undefined ? request.query.rating_max : RATING_MAX_DEFAULT;
-            if (validationFunctions.isNumberProvided(rating_min) && validationFunctions.isNumberProvided(rating_max) && validationFunctions.validateRatings(+rating_min, +rating_max)) {
-                request.query.rating_min = rating_min.toString();
-                request.query.rating_max = rating_max.toString();
+            const ratingMin: number = request.query.rating_min !== undefined ? +request.query.rating_min : RATING_MIN_DEFAULT;
+            const ratingMax: number = request.query.rating_max !== undefined ? +request.query.rating_max : RATING_MAX_DEFAULT;
+            if (validationFunctions.isNumberProvided(ratingMin) && validationFunctions.isNumberProvided(ratingMax) && validationFunctions.validateRatings(+ratingMin, +ratingMax)) {
+                request.query.rating_min = ratingMin.toString();
+                request.query.rating_max = ratingMax.toString();
                 next();
             } else { 
                 return response.status(400).send({
-                    message: 'Bad maximum or minimum rating.',
+                    message: 'Bad maximum and/or minimum rating.',
                 });
             }
         }
     },
     (request: Request, response: Response) => {
-        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2'
-        
-        let values = [
+        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2 ORDER BY rating_avg DESC LIMIT $3 OFFSET $4'
+        const values = [
             request.query.rating_min, 
-            request.query.rating_max
+            request.query.rating_max,
+            request.query.limit,
+            request.query.offset
         ];
 
         pool.query(query, values)
@@ -253,7 +302,7 @@ bookRouter.get('/series', (request, response) => {});
  * @apiName GetBooksInSeries
  * @apiGroup Book
  * 
- * @apiParam {String} series a series name.
+ * @apiParam {string} series a series name.
  * 
  * @apiSuccess {Book[]} books an array of objects containing book information.
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
@@ -435,4 +484,3 @@ bookRouter.post('/',(request, response) => {
 });
 
 export { bookRouter };
-

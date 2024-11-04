@@ -2,10 +2,11 @@
 
 # Compiled output
 /dist
+/build
+/docs
 
 # Node
 /node_modules
-/build
 npm-debug.log
 yarn-error.log
 package-lock.json
