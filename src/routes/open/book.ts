@@ -6,7 +6,7 @@ import { AuthRequest } from '../auth/login';
 const bookRouter: Router = express.Router();
 
 const selectBookInfo = `
-SELECT
+SELECT DISTINCT
     book_isbn, publication_year, title, series_name, series_position, rating_avg, rating_count, rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, image_url, image_small_url
 FROM
     BOOK_MAP
@@ -171,6 +171,7 @@ bookRouter.get('/year', (request: Request, response: Response, next: NextFunctio
  * @apiUse BookInformation
  */
 bookRouter.get('/title', (request, response) => {
+    
     response.send('Hello, World!');
 });
 
@@ -183,40 +184,43 @@ bookRouter.get('/title', (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book. 
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- *
+ * @apiBody {number} [limit=10] a minimum rating required for a book. 
+ * @apiBody {number} [offset=0] a maximum rating required for a book.
+ * 
  * @apiSuccess {Book(s)} success object containing information of books within the range of ratings.
- *
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
- * @apiError (400: Bad maximum or minimum rating.) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
+ * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  */
 bookRouter.get('/rating', 
     (request: Request, response: Response, next: NextFunction) => {
+        validationFunctions.validatePagination(request);
         if (request.query.rating_min === undefined && request.query.rating_max === undefined) {
             response.status(400).send({
                 message: "Missing maximum and minimum rating."
             });
         } else {
-            const rating_min = request.query.rating_min !== undefined ? request.query.rating_min : RATING_MIN_DEFAULT;
-            const rating_max = request.query.rating_max !== undefined ? request.query.rating_max : RATING_MAX_DEFAULT;
-            if (validationFunctions.isNumberProvided(rating_min) && validationFunctions.isNumberProvided(rating_max) && validationFunctions.validateRatings(+rating_min, +rating_max)) {
-                request.query.rating_min = rating_min.toString();
-                request.query.rating_max = rating_max.toString();
+            const ratingMin: number = request.query.rating_min !== undefined ? +request.query.rating_min : RATING_MIN_DEFAULT;
+            const ratingMax: number = request.query.rating_max !== undefined ? +request.query.rating_max : RATING_MAX_DEFAULT;
+            if (validationFunctions.isNumberProvided(ratingMin) && validationFunctions.isNumberProvided(ratingMax) && validationFunctions.validateRatings(+ratingMin, +ratingMax)) {
+                request.query.rating_min = ratingMin.toString();
+                request.query.rating_max = ratingMax.toString();
                 next();
             } else { 
                 return response.status(400).send({
-                    message: 'Bad maximum or minimum rating.',
+                    message: 'Bad maximum and/or minimum rating.',
                 });
             }
         }
     },
     (request: Request, response: Response) => {
-        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2'
-        
-        let values = [
+        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2 ORDER BY rating_avg DESC LIMIT $3 OFFSET $4'
+        const values = [
             request.query.rating_min, 
-            request.query.rating_max
+            request.query.rating_max,
+            request.query.limit,
+            request.query.offset
         ];
 
         pool.query(query, values)
@@ -435,4 +439,3 @@ bookRouter.post('/',(request, response) => {
 });
 
 export { bookRouter };
-

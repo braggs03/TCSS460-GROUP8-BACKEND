@@ -1,4 +1,5 @@
-import { RATING_MAX, RATING_MIN } from "./constants";
+import { Request } from 'express';
+import { RATING_MAX, RATING_MIN, LIMIT_DEFAULT, OFFSET_DEFAULT } from "./constants";
 
 /**
  * Checks the parameter to see if it is a a String.
@@ -64,13 +65,24 @@ function validateYear(min: number, max: number): boolean {
     return isMinValid && isMaxValid && isRangeValid;
 }
 
+function validatePagination(request: Request) {
+    request.query.limit =
+        isNumberProvided(request.query.limit) && +request.query.limit > 0
+            ? request.query.limit
+            : LIMIT_DEFAULT.toString();
+    request.query.offset =
+        isNumberProvided(request.query.offset) && +request.query.offset >= 0
+            ? request.query.offset
+            : OFFSET_DEFAULT.toString();
+}
 
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
     validateISBN,
     validateRatings,
-    validateYear
+    validateYear,
+    validatePagination
 };
 
 
