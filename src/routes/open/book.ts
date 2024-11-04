@@ -66,7 +66,7 @@ bookRouter.get('/isbn',
     },
     async (request: Request, response: Response) => {
         const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
-        let values = [request.query.isbn];
+        const values = [request.query.isbn];
 
         let book = {}
         await pool.query(theQuery, values)
@@ -122,7 +122,7 @@ bookRouter.get('/isbn',
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
  * @apiError (404: Year not found) {string} message No books associated with given year(s)
  */
-bookRouter.get('/year', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/year', (request: Request, response: Response) => {
     //default min is 1600
     const yearMin = parseInt(request.query.year_min as string) || 1600;
     const yearMax = parseInt(request.query.year_max as string);
@@ -324,9 +324,9 @@ bookRouter.get('/series/:series', (request, response) => {});
  * @apiError (404: Author not found) {string} message Author was not found.
  * @apiUse BookInformation
  */
-bookRouter.get('/:author', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/:author', (request: Request, response: Response) => {
     const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP'; //only temp
-    let values = [request.params.author];
+    const values = [request.params.author];
 
     pool.query(theQuery)
         .then((result) => {
@@ -382,7 +382,7 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
  * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
-bookRouter.get('/', (request: Request, response: Response, next: NextFunction) => {
+bookRouter.get('/', (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
     const limit: number = request.query.limit ? +request.query.limit : LIMIT_DEFAULT;
