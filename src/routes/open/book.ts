@@ -156,7 +156,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({ message: 'No books found for the given year range.' });
             }
-            response.send(result.rows );
+            response.send(result.rows);
         })
         .catch((error) => {
             console.error('DB Query error on GET by year');
@@ -380,7 +380,7 @@ bookRouter.get('/:author', (request: Request, response: Response) => {
  * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
  * @apiError (404: User Not Found) {String} message "User not found"
  * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
- * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
+ * @apiError (500: SQL Error) {String} message Server error - contact support
  */
 bookRouter.get('/', (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
@@ -405,9 +405,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
 
     pool.query(theQuery, values)
         .then((result) => {
-            response.send(
-                result.rows,
-            );
+            response.send(result.rows);
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
