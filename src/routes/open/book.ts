@@ -51,7 +51,7 @@ bookRouter.get('/isbn',
     (request: Request, response: Response, next: NextFunction) => {
         if(request.query.isbn === undefined) {
             return response.status(400).send({
-                message: "Missing 'isbn' query paremeter."
+                message: "Missing 'isbn' query parameter."
             });
         }
         if (
