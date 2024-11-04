@@ -1,6 +1,6 @@
 import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
-import { RATING_MAX, RATING_MAX_DEFAULT, RATING_MIN, RATING_MIN_DEFAULT } from '../../core/utilities/constants';
+import { LIMIT_DEFAULT, OFFSET_DEFAULT, RATING_MAX, RATING_MAX_DEFAULT, RATING_MIN, RATING_MIN_DEFAULT } from '../../core/utilities/constants';
 import { AuthRequest } from '../auth/login';
 
 const bookRouter: Router = express.Router();
@@ -373,7 +373,8 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
  * @api {get} /book Request to get all book(s).
  * @apiName GetAllBooks
  * @apiGroup Book
- *
+ * @apiBody {number} [limit=10] limit a limit value. 
+ * @apiBody {number} [offset=0] offset a offset value.
  * @apiSuccess {Book[]} success an array of objects containing book information.
  *
  * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
@@ -381,20 +382,38 @@ bookRouter.get('/:author', (request: Request, response: Response, next: NextFunc
  * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
-bookRouter.get('/', (request, response) => {
-    const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP';
-    pool.query(theQuery)
+bookRouter.get('/', (request: Request, response: Response, next: NextFunction) => {
+    validationFunctions.validatePagination(request);
+
+    const limit: number = request.query.limit ? +request.query.limit : LIMIT_DEFAULT;
+    const offset: number = request.query.offset ? +request.query.offset : OFFSET_DEFAULT;
+
+    const theQuery = `
+        SELECT b.isbn13 AS book_isbn, b.publication_year, b.title, s.series_name, bm.series_position, b.rating_avg, b.rating_count,
+               b.rating_1_star, b.rating_2_star, b.rating_3_star, b.rating_4_star, b.rating_5_star,
+               b.image_url, b.image_small_url, ARRAY_AGG(DISTINCT a.author_name) AS authors
+        FROM BOOKS b
+            LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
+            LEFT JOIN SERIES s ON bm.series_id = s.id
+            LEFT JOIN BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
+            LEFT JOIN AUTHORS a ON bm_author.author_id = a.id
+        GROUP BY b.isbn13, s.series_name, bm.series_position
+        ORDER BY b.title ASC
+        LIMIT $1 OFFSET $2;`;
+
+    const values = [limit, offset];
+
+    pool.query(theQuery, values)
         .then((result) => {
             response.send({
                 entries: result.rows,
             });
         })
         .catch((error) => {
-            //log the error
             console.error('DB Query error on GET all');
             console.error(error);
             response.status(500).send({
-                message: 'server error - contact support',
+                message: 'Server error - contact support',
             });
         });
 });
