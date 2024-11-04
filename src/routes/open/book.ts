@@ -41,7 +41,7 @@ FROM
  * @apiQuery {number} isbn a book ISBN to look up.
  *
  * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
- * @apiError (404: ISBN Not Found) {String} message Book with given ISBN not found.
+ * @apiError (404: ISBN Not Found) {String} message Book not found.
  * @apiError (400: Bad ISBN) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
  * @apiError (403: Invalid JWT) {String} message Provided JWT is invalid. Please sign-in again.
  * @apiError (401: Authorization Token is not supplied) {String} message No JWT provided, please sign in.
@@ -73,7 +73,7 @@ bookRouter.get('/isbn',
             .then((result) => {
                 if(result.rows.length === 0) {
                     return response.status(404).send({
-                        message: 'Book not found'
+                        message: 'Book not found.'
                     });
                 }
                 book = result.rows[0];
