@@ -128,8 +128,8 @@ bookRouter.get('/isbn',
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
     //default min is 1600
-    const yearMin = (request.query.year_min as string) || 1600;
-    const yearMax = (request.query.year_max as string);
+    const yearMin = (request.query.year_min) || 1600;
+    const yearMax = (request.query.year_max);
 
     if (isNaN(yearMax)) {
         return response.status(400).send({ message: "'year_max' query parameter is missing or not a number." });
@@ -739,7 +739,7 @@ async (request: Request, response: Response) => {
         }
     }
     const seriesName = request.body.series || "";
-    let seriesId: number | null = null;
+    let seriesId: number  = null;
     if (request.body.series && request.body.series.name) {
         const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
         const seriesResult = await pool.query(seriesQuery, [request.body.series.name]);
