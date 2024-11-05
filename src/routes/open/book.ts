@@ -2,6 +2,7 @@ import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
 import { LIMIT_DEFAULT, OFFSET_DEFAULT, RATING_MAX, RATING_MAX_DEFAULT, RATING_MIN, RATING_MIN_DEFAULT } from '../../core/utilities/constants';
 import { AuthRequest } from '../auth/login';
+import { IBook, IRatings, IUrlIcon } from '../../core/utilities/types'
 
 const bookRouter: Router = express.Router();
 
@@ -316,33 +317,102 @@ bookRouter.get('/series/:series', (request, response) => {});
  * @apiName GetBookByAuthor
  * @apiGroup Book
  * 
+ * @apiSuccess {string} author Author's full name
+ * @apiSuccess {Array<IBook>} books List of books by the author
+ * 
  * @apiParam {string} author name of author to look up
  * 
  * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
  * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
  * @apiError (404: Author not found) {string} message Author was not found.
+ * @apiError (500: Server Error) {string} message Server error - contact support
+
  * @apiUse BookInformation
  */
 bookRouter.get('/:author', (request: Request, response: Response) => {
-    const theQuery = 'SELECT book_isbn, author_id, series_id, series_position FROM BOOK_MAP'; //only temp
-    const values = [request.params.author];
+    const authorName = request.params.author;
+    if (!authorName) {
+        return response.status(400).send({
+            message: "Missing 'author' parameter."
+        });
+    }
 
-    pool.query(theQuery)
+    const theQuery = `
+        SELECT author_name, id 
+        FROM AUTHORS 
+        WHERE author_name ILIKE $1 
+        LIMIT 1;`;
+
+    pool.query(theQuery, [authorName])
         .then((result) => {
+            if (result.rows.length === 0) {
+                throw { status: 404, message: 'Author not found.' };
+            } 
+
+            const author = result.rows[0];
+            const booksQuery = `
+                SELECT 
+                    BOOKS.isbn13,
+                    BOOKS.publication_year AS publication,
+                    BOOKS.title AS title,
+                    BOOKS.rating_avg AS average,
+                    BOOKS.rating_count AS count,
+                    BOOKS.rating_1_star AS rating_1,
+                    BOOKS.rating_2_star AS rating_2,
+                    BOOKS.rating_3_star AS rating_3,
+                    BOOKS.rating_4_star AS rating_4,
+                    BOOKS.rating_5_star AS rating_5,
+                    BOOKS.image_url AS large,
+                    BOOKS.image_small_url AS small   
+                    STRING_AGG(AUTHORS.author_name, ', ') AS authors             
+                FROM BOOKS 
+                JOIN BOOK_MAP ON BOOKS.isbn13 = BOOK_MAP.book_isbn
+                JOIN AUTHORS ON BOOK_MAP.author_id = AUTHORS.id
+                WHERE AUTHORS.id = $1;
+                GROUP BY BOOKS.isbn13;`;
+
+            return pool.query(booksQuery, [author.id])
+            .then((booksResult) => {
+                const books: IBook[] = booksResult.rows.map(row => ({
+                    isbn13: row.isbn13,
+                    authors: row.authors,
+                    publication: row.publication,
+                    title: row.title,
+                    ratings: {
+                        average: row.average,
+                        count: row.count,
+                        rating_1: row.rating_1,
+                        rating_2: row.rating_2,
+                        rating_3: row.rating_3,
+                        rating_4: row.rating_4,
+                        rating_5: row.rating_5
+                    },
+                    icons: {
+                        large: row.large,
+                        small: row.small
+                    }
+            }));
+
             response.send({
-                books: result.rows,
+                author: author.author_name,
+                books
             });
         })
         .catch((error) => {
-            //log the error
-            console.error('DB Query error on GET /:author');
-            console.error(error);
-            response.status(500).send({
-                message: 'server error - contact support',
-            });
+            if (error.status === 404) {
+                response.status(404).send({
+                    message: error.message
+                });
+            } else {
+                console.error('DB Query error on GET /:author', error);
+                response.status(500).send({
+                    message: 'Server error - contact support',
+                });
+            }
         });
     });
+});
 
 /**
  * @api {get} /book Request to get book(s).
