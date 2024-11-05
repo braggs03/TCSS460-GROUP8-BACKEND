@@ -14,6 +14,9 @@ FROM
     LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
     LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
 
+function mwRatingAverage(rating1:number, rating2:number, rating3:number, rating4:number, rating5:number, count: number): number {
+    return ((rating1 * 1) + (rating2 * 2)+ (rating3 * 3)+ (rating4 * 3)+ (rating5 * 5))/count;
+}
 /**
  * @apiDefine BookInformation
  * @apiSuccess (200: Success) {Object} book the book object containing all information
@@ -125,8 +128,8 @@ bookRouter.get('/isbn',
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
     //default min is 1600
-    const yearMin = parseInt(request.query.year_min as string) || 1600;
-    const yearMax = parseInt(request.query.year_max as string);
+    const yearMin = (request.query.year_min as string) || 1600;
+    const yearMax = (request.query.year_max as string);
 
     if (isNaN(yearMax)) {
         return response.status(400).send({ message: "'year_max' query parameter is missing or not a number." });
@@ -138,19 +141,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
         });
     }
 
-    const theQuery = `SELECT b.isbn13 AS book_isbn,b.publication_year,b.title,s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,
-    b.rating_3_star,b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
-    ARRAY_AGG(DISTINCT a.author_name) AS authors
-    FROM
-    BOOKS b
-        LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
-        LEFT JOIN SERIES s ON bm.series_id = s.id
-        LEFT JOIN BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
-        LEFT JOIN AUTHORS a ON bm_author.author_id = a.id
-    WHERE
-        b.publication_year BETWEEN $1 AND $2
-    GROUP BY
-        b.isbn13, s.series_name, bm.series_position;`;
+    const theQuery = selectBookInfo + "WHERE publication_year BETWEEN $1 AND $2";
     
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
@@ -208,24 +199,7 @@ bookRouter.get('/title', (request, response) => {
             message: 'Title was not provided',
         });
     }
-    const theQuery = `
-    SELECT b.isbn13 AS book_isbn, b.publication_year, b.title, s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,b.rating_3_star,
-        b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
-        ARRAY_AGG(DISTINCT a.author_name) AS authors
-    FROM
-        BOOKS b
-    LEFT JOIN
-        BOOK_MAP bm ON b.isbn13 = bm.book_isbn
-    LEFT JOIN
-        SERIES s ON bm.series_id = s.id
-    LEFT JOIN
-        BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
-    LEFT JOIN
-        AUTHORS a ON bm_author.author_id = a.id
-    WHERE
-        b.title ILIKE '%' || $1 || '%'  
-    GROUP BY
-        b.isbn13, s.series_name, bm.series_position;`;
+    const theQuery = selectBookInfo + "WHERE title = $1";
 
         pool.query(theQuery, [titleQuery])
         .then((result) => {
@@ -586,17 +560,46 @@ bookRouter.delete('/', (request, response) => {
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
- * @apiBody {rating} rating the new rating to be changed
- *
- * @apiSuccess {String} success the rating was successfully changed
+ * @apiBody {number} [rating_1] rating_1 the number of 1 stars of the book that needs to be added
+ * @apiBody {number} [rating_2] rating_2 the number of 2 stars of the book that needs to be added
+ * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
+ * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
+ * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
+ * @apiSuccess {String} success the rating was successfully updated
  *
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
- * @apiError (404: Book Not Found) {String} message Book not found
- * @apiError (400: Missing Parameters) {String} message Parameters were not added correctly, try again.
+ * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
+ * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
  */
-bookRouter.put('/',(request, response) => {
+bookRouter.put('/', async (request: Request, response: Response) => {
+    if (!request.body.isbn) {
+        return response.status(400).send({
+            message: 'You are missing parameters (either isbn or rating).',
+        });
+    }
 
+    if (request.body.rating_1 === undefined && request.body.rating_2 === undefined &&
+        request.body.rating_3 === undefined && request.body.rating_4 === undefined &&
+        request.body.rating_5 === undefined) {
+        return response.status(400).send({
+            message: 'You are missing parameters (either isbn or rating).',
+        });
+    }
+
+    const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
+                       FROM BOOKS 
+                       WHERE isbn13 = $1`;
+    const currentBook = await pool.query(bookQuery, [request.body.isbn]);
+    if (currentBook.rows.length === 0) {
+        return response.status(404).send({
+            message: 'Book with given ISBN cannot be found. Update failed.',
+        });
+    }
+
+    response.send({
+        success: 'The rating was successfully updated.',
+    });
 });
 
 /**
@@ -666,8 +669,9 @@ async (request: Request, response: Response) => {
     const rating4 = request.body.rating_4 > 0 ? request.body.rating_4 : 0;
     const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
     const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
-    const ratingAvg = ((rating1 * 1) + (rating2 * 2)+ (rating3 * 3)+ (rating4 * 3)+ (rating5 * 5))/ratingCount;
+    const ratingAvg = mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
     const bookResult = await pool.query(theQuery, [bookISBN]); 
+
     if(bookResult.rows.length > 0) {
         response.status(404).send({
             message: 'Cannot have duplicate ISBNs! Try a different value'
