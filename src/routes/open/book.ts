@@ -378,6 +378,7 @@ bookRouter.get('/:author', (request: Request, response: Response) => {
                     isbn13: row.isbn13,
                     authors: row.authors,
                     publication: row.publication,
+                    original_title: row.title,
                     title: row.title,
                     ratings: {
                         average: row.average,
