@@ -127,21 +127,15 @@ bookRouter.get('/isbn',
  * @apiError (404: Year not found) {string} message No books found for the given year range.
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
-    //default min is 1600
-    const yearMin = (request.query.year_min) || 1600;
-    const yearMax = (request.query.year_max);
-
-    if (isNaN(yearMax)) {
-        return response.status(400).send({ message: "'year_max' query parameter is missing or not a number." });
-    }
-    
+    const yearMin = parseInt(request.query.year_min as string) || 1600;
+    const yearMax = parseInt(request.query.year_max as string);
     if (!validationFunctions.validateYear(yearMin, yearMax)) {
         return response.status(400).send({
             message: 'Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.',
         });
     }
 
-    const theQuery = selectBookInfo + 'WHERE publication_year BETWEEN $1 AND $2';
+    const theQuery = selectBookInfo + ` WHERE publication_year BETWEEN $1 AND $2;`;
     
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
@@ -199,7 +193,7 @@ bookRouter.get('/title', (request, response) => {
             message: 'Title was not provided',
         });
     }
-    const theQuery = selectBookInfo + 'WHERE title = $1';
+    const theQuery = selectBookInfo + ` WHERE title LIKE '%'||$1||'%';`
 
         pool.query(theQuery, [titleQuery])
         .then((result) => {
@@ -674,7 +668,6 @@ bookRouter.post('/',(request: Request, response: Response, next: NextFunction) =
     return next();
 },
 async (request: Request, response: Response) => {
-    const theQuery = `SELECT isbn13 FROM BOOKS WHERE isbn13 = $1`;
     let bookISBN = request.body.isbn13;
     const rating1 = request.body.rating_1 > 0 ? request.body.rating_1 : 0;
     const rating2 = request.body.rating_2 > 0 ? request.body.rating_2 : 0;
@@ -683,13 +676,6 @@ async (request: Request, response: Response) => {
     const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
     const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
     const ratingAvg = mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
-    const bookResult = await pool.query(theQuery, [bookISBN]); 
-
-    if(bookResult.rows.length > 0) {
-        response.status(404).send({
-            message: 'Cannot have duplicate ISBNs! Try a different value'
-        });
-    }
     
     const authors = request.body.authors || []; 
     const authorIds: number[] = []; 
@@ -708,7 +694,7 @@ async (request: Request, response: Response) => {
         }
     }
     const seriesName = request.body.series || "";
-    let seriesId: number  = null;
+    let seriesId: number = null;
     if (request.body.series && request.body.series.name) {
         const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
         const seriesResult = await pool.query(seriesQuery, [request.body.series.name]);
@@ -740,28 +726,47 @@ async (request: Request, response: Response) => {
         rating5,
         request.body.image_url,
         request.body.image_small_url
-    ]);
+    ]).then((result) => {
+        response.status(201).send({
+            isbn13: bookISBN,
+            publication_year: request.body.publication_year,
+            title: request.body.title,
+            rating_avg: ratingAvg,
+            rating_Count: ratingCount,
+            rating_1: rating1,
+            rating_2: rating2,
+            rating_3: rating3,
+            rating_4: rating4,
+            rating_5: rating5,
+            image_url: request.body.image_url,
+            image_small_url: request.body.image_small_url,
+            authors: authors,
+            series_name: seriesName,
+            series_pos: seriesId,
+        });
+    })
+    .catch((error) => {
+        if (
+            error.detail != undefined &&
+            (error.detail as string).endsWith('already exists.')
+        ) {
+            console.error('Name exists');
+            response.status(400).send({
+                message: 'Name exists',
+            });
+        } else {
+            //log the error
+            console.error('DB Query error on POST');
+            console.error(error);
+            response.status(500).send({
+                message: 'server error - contact support',
+            });
+        }
+    });
     const seriesPos = request.body.series_pos || null; 
     for (const idOfAuthor of authorIds) {
         await pool.query(`INSERT INTO BOOK_MAP (book_isbn, author_id, series_id, series_position) VALUES ($1, $2, $3, $4)`,[request.body.isbn13, idOfAuthor, seriesId, seriesPos]);
     }
-    response.status(201).send({
-        isbn13: bookISBN,
-        publication_year: request.body.publication_year,
-        title: request.body.title,
-        rating_avg: ratingAvg,
-        rating_Count: ratingCount,
-        rating_1: rating1,
-        rating_2: rating2,
-        rating_3: rating3,
-        rating_4: rating4,
-        rating_5: rating5,
-        image_url: request.body.image_url,
-        image_small_url: request.body.image_small_url,
-        authors: authors,
-        series_name: seriesName,
-        series_pos: seriesId
-    });
 });
 
 
