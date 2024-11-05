@@ -1,5 +1,10 @@
 import { Request } from 'express';
-import { RATING_MAX, RATING_MIN, LIMIT_DEFAULT, OFFSET_DEFAULT } from "./constants";
+import {
+    RATING_MAX,
+    RATING_MIN,
+    LIMIT_DEFAULT,
+    OFFSET_DEFAULT,
+} from './constants';
 
 /**
  * Checks the parameter to see if it is a a String.
@@ -51,11 +56,17 @@ function isNumber(x: any): x is number {
 
 function validateISBN(isbn: number): boolean {
     const isbnStr = isbn.toString();
-    return (isbnStr.length == 13 || isbnStr.length == 10) && isbn > 0;
+    return isbnStr.length == 13 && isbn > 0;
 }
 
 function validateRatings(rating_min: number, rating_max: number) {
-    return rating_min >= RATING_MIN && rating_min <= RATING_MAX && rating_max >= RATING_MIN && rating_max <= RATING_MAX && rating_min <= rating_max;
+    return (
+        rating_min >= RATING_MIN &&
+        rating_min <= RATING_MAX &&
+        rating_max >= RATING_MIN &&
+        rating_max <= RATING_MAX &&
+        rating_min <= rating_max
+    );
 }
 
 function validateYear(min: number, max: number): boolean {
@@ -75,8 +86,8 @@ function validatePagination(request: Request) {
             ? request.query.offset
             : OFFSET_DEFAULT.toString();
 }
-            
-function validateTitle(title: string) : boolean {
+
+function validateTitle(title: string): boolean {
     return title.trim().length > 0;
 }
 
@@ -89,6 +100,5 @@ const validationFunctions = {
     validatePagination,
     validateTitle,
 };
-
 
 export { validationFunctions };
