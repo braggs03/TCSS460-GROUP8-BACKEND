@@ -523,27 +523,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
 
     pool.query(theQuery, values)
         .then((result) => {
-            const books = result.rows.map(row => ({
-                isbn13: row.book_isbn,
-                authors: row.authors,
-                publication: row.publication_year,
-                original_title: row.original_title,
-                title: row.title,
-            ratings: {
-                average: row.rating_avg,
-                count: row.rating_count,
-                rating_1: row.rating_1_star,
-                rating_2: row.rating_2_star,
-                rating_3: row.rating_3_star,
-                rating_4: row.rating_4_star,
-                rating_5: row.rating_5_star,
-            },
-            icons: {
-                large: row.image_url,
-                small: row.image_small_url,
-            }
-        }));
-            response.send(books);
+            response.send(result.rows);
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
