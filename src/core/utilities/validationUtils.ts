@@ -62,9 +62,15 @@ function validateYear(min: number, max: number): boolean {
     const isMinValid = min >= 1600 && min <= 3000;
     const isMaxValid = max >= 1600 && max <= 3000;
     const isRangeValid = min <= max;
-    return isMinValid && isMaxValid && isRangeValid;
+    const isPositive = (min && max) > 0;
+    return isMinValid && isMaxValid && isRangeValid && isPositive;
 }
-
+function validatePostYear(year: number) : boolean {
+    const isPositive = year > 0;
+    const isValidYear = year >= 1600;
+    const isValidMax = year <= 3000;
+    return isPositive && isValidYear && isValidMax;
+}
 function validatePagination(request: Request) {
     request.query.limit =
         isNumberProvided(request.query.limit) && +request.query.limit > 0
@@ -88,6 +94,7 @@ const validationFunctions = {
     validateYear,
     validatePagination,
     validateTitle,
+    validatePostYear
 };
 
 

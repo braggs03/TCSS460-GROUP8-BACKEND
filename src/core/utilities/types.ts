@@ -22,3 +22,5 @@ interface IBook {
     ratings: IRatings;
     icons: IUrlIcon;
 }
+
+export { IRatings, IUrlIcon, IBook }
