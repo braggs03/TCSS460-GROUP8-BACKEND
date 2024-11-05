@@ -14,6 +14,9 @@ FROM
     LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
     LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
 
+function mwRatingAverage(rating1:number, rating2:number, rating3:number, rating4:number, rating5:number, count: number): number {
+    return ((rating1 * 1) + (rating2 * 2)+ (rating3 * 3)+ (rating4 * 3)+ (rating5 * 5))/count;
+}
 /**
  * @apiDefine BookInformation
  * @apiSuccess (200: Success) {Object} book the book object containing all information
@@ -125,8 +128,8 @@ bookRouter.get('/isbn',
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
     //default min is 1600
-    const yearMin = parseInt(request.query.year_min as string) || 1600;
-    const yearMax = parseInt(request.query.year_max as string);
+    const yearMin = (request.query.year_min) || 1600;
+    const yearMax = (request.query.year_max);
 
     if (isNaN(yearMax)) {
         return response.status(400).send({ message: "'year_max' query parameter is missing or not a number." });
@@ -138,26 +141,34 @@ bookRouter.get('/year', (request: Request, response: Response) => {
         });
     }
 
-    const theQuery = `SELECT b.isbn13 AS book_isbn,b.publication_year,b.title,s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,
-    b.rating_3_star,b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
-    ARRAY_AGG(DISTINCT a.author_name) AS authors
-    FROM
-    BOOKS b
-        LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
-        LEFT JOIN SERIES s ON bm.series_id = s.id
-        LEFT JOIN BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
-        LEFT JOIN AUTHORS a ON bm_author.author_id = a.id
-    WHERE
-        b.publication_year BETWEEN $1 AND $2
-    GROUP BY
-        b.isbn13, s.series_name, bm.series_position;`;
+    const theQuery = selectBookInfo + 'WHERE publication_year BETWEEN $1 AND $2';
     
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({ message: 'No books found for the given year range.' });
             }
-            response.send(result.rows);
+            const books = result.rows.map(row => ({
+                    isbn13: row.book_isbn,
+                    authors: row.authors,
+                    publication: row.publication_year,
+                    original_title: row.original_title,
+                    title: row.title,
+                ratings: {
+                    average: row.rating_avg,
+                    count: row.rating_count,
+                    rating_1: row.rating_1_star,
+                    rating_2: row.rating_2_star,
+                    rating_3: row.rating_3_star,
+                    rating_4: row.rating_4_star,
+                    rating_5: row.rating_5_star,
+                },
+                icons: {
+                    large: row.image_url,
+                    small: row.image_small_url,
+                }
+            }));
+            response.send(books);
         })
         .catch((error) => {
             console.error('DB Query error on GET by year');
@@ -188,36 +199,39 @@ bookRouter.get('/title', (request, response) => {
             message: 'Title was not provided',
         });
     }
-    const theQuery = `
-    SELECT b.isbn13 AS book_isbn, b.publication_year, b.title, s.series_name,bm.series_position,b.rating_avg,b.rating_count,b.rating_1_star,b.rating_2_star,b.rating_3_star,
-        b.rating_4_star,b.rating_5_star,b.image_url,b.image_small_url,
-        ARRAY_AGG(DISTINCT a.author_name) AS authors
-    FROM
-        BOOKS b
-    LEFT JOIN
-        BOOK_MAP bm ON b.isbn13 = bm.book_isbn
-    LEFT JOIN
-        SERIES s ON bm.series_id = s.id
-    LEFT JOIN
-        BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
-    LEFT JOIN
-        AUTHORS a ON bm_author.author_id = a.id
-    WHERE
-        b.title ILIKE '%' || $1 || '%'  
-    GROUP BY
-        b.isbn13, s.series_name, bm.series_position;`;
+    const theQuery = selectBookInfo + 'WHERE title = $1';
 
-    pool.query(theQuery,[titleQuery])
+        pool.query(theQuery, [titleQuery])
         .then((result) => {
-            if (result.rows.length === 0) {
-                return response.status(404).send({ message: 'Title was not found' });
+            const books = result.rows.map(row => ({
+                isbn13: row.book_isbn,
+                authors: row.authors,
+                publication: row.publication_year,
+                original_title: row.original_title,
+                title: row.title,
+            ratings: {
+                average: row.rating_avg,
+                count: row.rating_count,
+                rating_1: row.rating_1_star,
+                rating_2: row.rating_2_star,
+                rating_3: row.rating_3_star,
+                rating_4: row.rating_4_star,
+                rating_5: row.rating_5_star,
+            },
+            icons: {
+                large: row.image_url,
+                small: row.image_small_url,
             }
-            response.send(result.rows);
+        }));
+
+            response.send(books);
         })
         .catch((error) => {
-            console.error('DB Query error on GET by title');
+            console.error('DB Query error on GET all');
             console.error(error);
-            response.status(500).send({ message: 'server error - contact support' });
+            response.status(500).send({
+                message: 'Server error - contact support',
+            });
         });
 });
 
@@ -503,18 +517,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
     const limit: number = request.query.limit ? +request.query.limit : LIMIT_DEFAULT;
     const offset: number = request.query.offset ? +request.query.offset : OFFSET_DEFAULT;
 
-    const theQuery = `
-        SELECT b.isbn13 AS book_isbn, b.publication_year, b.title, s.series_name, bm.series_position, b.rating_avg, b.rating_count,
-               b.rating_1_star, b.rating_2_star, b.rating_3_star, b.rating_4_star, b.rating_5_star,
-               b.image_url, b.image_small_url, ARRAY_AGG(DISTINCT a.author_name) AS authors
-        FROM BOOKS b
-            LEFT JOIN BOOK_MAP bm ON b.isbn13 = bm.book_isbn
-            LEFT JOIN SERIES s ON bm.series_id = s.id
-            LEFT JOIN BOOK_MAP bm_author ON b.isbn13 = bm_author.book_isbn
-            LEFT JOIN AUTHORS a ON bm_author.author_id = a.id
-        GROUP BY b.isbn13, s.series_name, bm.series_position
-        ORDER BY b.title ASC
-        LIMIT $1 OFFSET $2;`;
+    const theQuery = selectBookInfo;
 
     const values = [limit, offset];
 
@@ -570,49 +573,196 @@ bookRouter.delete('/', (request, response) => {
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
- * @apiBody {rating} rating the new rating to be changed
- *
- * @apiSuccess {String} success the rating was successfully changed
+ * @apiBody {number} [rating_1] rating_1 the number of 1 stars of the book that needs to be added
+ * @apiBody {number} [rating_2] rating_2 the number of 2 stars of the book that needs to be added
+ * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
+ * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
+ * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
+ * @apiSuccess {String} success the rating was successfully updated
  *
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
- * @apiError (404: Book Not Found) {String} message Book not found
- * @apiError (400: Missing Parameters) {String} message Parameters were not added correctly, try again.
+ * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
+ * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
  */
-bookRouter.put('/',(request, response) => {
+bookRouter.put('/', async (request: Request, response: Response) => {
+    if (!request.body.isbn) {
+        return response.status(400).send({
+            message: 'You are missing parameters (either isbn or rating).',
+        });
+    }
 
+    if (request.body.rating_1 === undefined && request.body.rating_2 === undefined &&
+        request.body.rating_3 === undefined && request.body.rating_4 === undefined &&
+        request.body.rating_5 === undefined) {
+        return response.status(400).send({
+            message: 'You are missing parameters (either isbn or rating).',
+        });
+    }
+
+    const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
+                       FROM BOOKS 
+                       WHERE isbn13 = $1`;
+    const currentBook = await pool.query(bookQuery, [request.body.isbn]);
+    if (currentBook.rows.length === 0) {
+        return response.status(404).send({
+            message: 'Book with given ISBN cannot be found. Update failed.',
+        });
+    }
+
+    response.send({
+        success: 'The rating was successfully updated.',
+    });
 });
 
 /**
- * @api {post} /book Request to add an entry.
+ * @api {post} /book Request to add a book
  *
- * @apiDescription Request to add a book into the database.
+ * @apiDescription Request to add a book into the database. If the book is not a series, you must enter an empty string for series_name and enter null for series_pos
  *
  * @apiName PostBook
  * @apiGroup Book
  *
- * @apiBody {string} isbn the isbn of the book that needs to be added
+ * @apiBody {number} isbn the isbn of the book that needs to be added
  * @apiBody {number} publication_year the year of the book that needs to be added
  * @apiBody {string} title the title of the book that needs to be added
  * @apiBody {string} series_name the series of the book that needs to be added
  * @apiBody {number} series_pos the series number of the book that needs to be added
- * @apiBody {number} rating_avg the average rating of the book that needs to be added
- * @apiBody {number} rating_1 the number of 1 stars of the book that needs to be added
- * @apiBody {number} rating_2 the number of 2 stars of the book that needs to be added
- * @apiBody {number} rating_3 the number of 3 stars of the book that needs to be added
- * @apiBody {number} rating_4 the number of 4 stars of the book that needs to be added
- * @apiBody {number} rating_5 the number of 5 stars of the book that needs to be added
+ * @apiBody {string[]} authors an array of authors, they must be comma separated.
+ * @apiBody {number} [rating_1=0] rating_1 the number of 1 stars of the book that needs to be added
+ * @apiBody {number} [rating_2=0] rating_2 the number of 2 stars of the book that needs to be added
+ * @apiBody {number} [rating_3=0] rating_3 the number of 3 stars of the book that needs to be added
+ * @apiBody {number} [rating_4=0] rating_4 the number of 4 stars of the book that needs to be added
+ * @apiBody {number} [rating_5=0] rating_5 the number of 5 stars of the book that needs to be added
  * @apiBody {string} image_url the url of the book that needs to be added
  * @apiBody {string} small_url the small image 
  *
- * @apiSuccess {String} success the book was added
+ * @apiSuccess (Success 201) {String} success the book was added
  * 
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
- * @apiError (400: Missing Parameters) {String} message Parameters were not added correctly, try again.
+ * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
+ * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 or 10 digit number.
+ * @apiError (400: Empty Title) {String} message Title is empty and/or year is not in the range of 1600 - 3000
+ * @apiError (404: Duplicate ISBN) {String} message Cannot have duplicate ISBNs! Try a different value.
  */
-bookRouter.post('/',(request, response) => {
+bookRouter.post('/',(request: Request, response: Response, next: NextFunction) => {
+    if(request.body.isbn13 === undefined || request.body.publication_year === undefined || request.body.title === undefined ||
+        request.body.image_url === undefined || request.body.image_small_url === undefined) {
+        return response.status(400).send({
+            message: 'One of the parameters is missing! Please re-check to see you have all required fields!'
+        });
+    }
 
+    if (
+        !validationFunctions.isNumberProvided(request.body.isbn13) ||
+        !validationFunctions.validateISBN(request.body.isbn13 as unknown as number)
+    ) {
+        return response.status(400).send({
+            message: 'ISBN not valid. ISBN should be a positive 13 or 10 digit number.'
+        }); 
+    }
+    if(
+        !validationFunctions.validateTitle(request.body.title) ||
+        !validationFunctions.validatePostYear(request.body.publication_year)
+    ) {
+        return response.status(400).send({
+            message: 'Title is empty and/or year is not in the range of 1600 - 3000'
+        });
+    }
+    
+    return next();
+},
+async (request: Request, response: Response) => {
+    const theQuery = `SELECT isbn13 FROM BOOKS WHERE isbn13 = $1`;
+    let bookISBN = request.body.isbn13;
+    const rating1 = request.body.rating_1 > 0 ? request.body.rating_1 : 0;
+    const rating2 = request.body.rating_2 > 0 ? request.body.rating_2 : 0;
+    const rating3 = request.body.rating_3 > 0 ? request.body.rating_3 : 0;
+    const rating4 = request.body.rating_4 > 0 ? request.body.rating_4 : 0;
+    const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
+    const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
+    const ratingAvg = mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
+    const bookResult = await pool.query(theQuery, [bookISBN]); 
+
+    if(bookResult.rows.length > 0) {
+        response.status(404).send({
+            message: 'Cannot have duplicate ISBNs! Try a different value'
+        });
+    }
+    
+    const authors = request.body.authors || []; 
+    const authorIds: number[] = []; 
+
+    for (const authorName of authors) {
+        const authorQuery = `SELECT id FROM AUTHORS WHERE author_name = $1`;
+        const authorResult = await pool.query(authorQuery, [authorName]); 
+
+        if (authorResult.rows.length > 0) {  
+           
+            authorIds.push(authorResult.rows[0].id); 
+        } else {
+            const insertAuthorQuery = `INSERT INTO AUTHORS (author_name) VALUES ($1) RETURNING id`;
+            const insertResult = await pool.query(insertAuthorQuery, [authorName]);
+            authorIds.push(insertResult.rows[0].id); 
+        }
+    }
+    const seriesName = request.body.series || "";
+    let seriesId: number  = null;
+    if (request.body.series && request.body.series.name) {
+        const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
+        const seriesResult = await pool.query(seriesQuery, [request.body.series.name]);
+
+        if (seriesResult.rows.length > 0) {
+        
+            seriesId = seriesResult.rows[0].id;
+        } else {
+    
+            const insertSeriesQuery = `INSERT INTO SERIES (series_name) VALUES ($1) RETURNING id`;
+            const insertSeriesResult = await pool.query(insertSeriesQuery, [request.body.series.name]);
+            seriesId = insertSeriesResult.rows[0].id;
+        }
+    }
+
+    const insertBookQuery = `
+        INSERT INTO BOOKS (isbn13, publication_year, title, rating_avg, rating_count, rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, image_url, image_small_url)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)`;
+    await pool.query(insertBookQuery, [
+        bookISBN,
+        request.body.publication_year,
+        request.body.title,
+        ratingAvg,
+        ratingCount,
+        rating1,
+        rating2,
+        rating3,
+        rating4,
+        rating5,
+        request.body.image_url,
+        request.body.image_small_url
+    ]);
+    const seriesPos = request.body.series_pos || null; 
+    for (const idOfAuthor of authorIds) {
+        await pool.query(`INSERT INTO BOOK_MAP (book_isbn, author_id, series_id, series_position) VALUES ($1, $2, $3, $4)`,[request.body.isbn13, idOfAuthor, seriesId, seriesPos]);
+    }
+    response.status(201).send({
+        isbn13: bookISBN,
+        publication_year: request.body.publication_year,
+        title: request.body.title,
+        rating_avg: ratingAvg,
+        rating_Count: ratingCount,
+        rating_1: rating1,
+        rating_2: rating2,
+        rating_3: rating3,
+        rating_4: rating4,
+        rating_5: rating5,
+        image_url: request.body.image_url,
+        image_small_url: request.body.image_small_url,
+        authors: authors,
+        series_name: seriesName,
+        series_pos: seriesId
+    });
 });
+
 
 export { bookRouter };
