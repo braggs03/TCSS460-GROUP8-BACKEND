@@ -27,7 +27,7 @@ CREATE TABLE
         salt VARCHAR(255),
         FOREIGN KEY (Account_ID) REFERENCES Account (Account_ID)
             ON DELETE CASCADE
-            ON UPDATE CASCADE,
+            ON UPDATE CASCADE
     );
 
 CREATE TABLE
