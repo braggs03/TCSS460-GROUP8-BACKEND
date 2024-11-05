@@ -15,7 +15,8 @@ CREATE TABLE
         Username VARCHAR(255) NOT NULL UNIQUE,
         Email VARCHAR(255) NOT NULL UNIQUE,
         Phone VARCHAR(15) NOT NULL UNIQUE,
-        Account_Role int NOT NULL
+        Account_Role int NOT NULL 
+            CHECK (Account_Role >= 0 AND Account_Role <=2)
     );
 
 CREATE TABLE
@@ -25,6 +26,8 @@ CREATE TABLE
         Salted_Hash VARCHAR(255) NOT NULL,
         salt VARCHAR(255),
         FOREIGN KEY (Account_ID) REFERENCES Account (Account_ID)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE
     );
 
 CREATE TABLE
@@ -51,24 +54,30 @@ FROM
 CREATE TABLE
     BOOKS (
         isbn13 BIGINT PRIMARY KEY NOT NULL,
-        publication_year INT NOT NULL,
+        publication_year INT NOT NULL CHECK (publication_year > 0),
         title TEXT NOT NULL,
-        rating_avg FLOAT NOT NULL,
-        rating_count INT NOT NULL,
-        rating_1_star INT NOT NULL,
-        rating_2_star INT NOT NULL,
-        rating_3_star INT NOT NULL,
-        rating_4_star INT NOT NULL,
-        rating_5_star INT NOT NULL,
+        rating_avg FLOAT NOT NULL CHECK (rating_avg >= 0),
+        rating_count INT NOT NULL CHECK (rating_count >=0),
+        rating_1_star INT NOT NULL CHECK (rating_1_star >=0),
+        rating_2_star INT NOT NULL CHECK (rating_2_star >=0),
+        rating_3_star INT NOT NULL CHECK (rating_3_star >=0),
+        rating_4_star INT NOT NULL CHECK (rating_4_star >=0),
+        rating_5_star INT NOT NULL CHECK (rating_5_star >=0),
         image_url TEXT,
         image_small_url TEXT
     );
 
 CREATE TABLE
-    AUTHORS (id SERIAL PRIMARY KEY, author_name TEXT NOT NULL);
+    AUTHORS (
+        id SERIAL PRIMARY KEY,
+        author_name TEXT NOT NULL
+    );
 
 CREATE TABLE
-    SERIES (id SERIAL PRIMARY KEY, series_name TEXT NOT NULL);
+    SERIES (
+        id SERIAL PRIMARY KEY,
+        series_name TEXT NOT NULL
+    );
 
 CREATE TABLE
     BOOK_MAP (
@@ -76,9 +85,14 @@ CREATE TABLE
         author_id INT NOT NULL,
         series_id INT,
         series_position INT,
-        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13) ON DELETE CASCADE,
-        FOREIGN KEY (author_id) REFERENCES AUTHORS (id) ON DELETE CASCADE,
-        FOREIGN KEY (series_id) REFERENCES SERIES (id) ON DELETE SET NULL
+        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13)
+            ON DELETE CASCADE
+            ON UPDATE CASCADE, 
+        FOREIGN KEY (author_id) REFERENCES AUTHORS (id) 
+            ON DELETE CASCADE
+            ON UPDATE CASCADE,
+        FOREIGN KEY (series_id) REFERENCES SERIES (id) 
+            ON DELETE SET NULL
     );
 
 /* Insert data from RAW_BOOKS into BOOKS */
@@ -86,7 +100,7 @@ INSERT INTO
     BOOKS
 SELECT
     isbn13,
-    publication_year,
+    ABS(publication_year)
     title,
     rating_avg,
     rating_count,
