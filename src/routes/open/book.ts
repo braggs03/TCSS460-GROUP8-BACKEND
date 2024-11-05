@@ -141,7 +141,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
         });
     }
 
-    const theQuery = selectBookInfo + "WHERE publication_year BETWEEN $1 AND $2";
+    const theQuery = selectBookInfo + 'WHERE publication_year BETWEEN $1 AND $2';
     
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
@@ -199,7 +199,7 @@ bookRouter.get('/title', (request, response) => {
             message: 'Title was not provided',
         });
     }
-    const theQuery = selectBookInfo + "WHERE title = $1";
+    const theQuery = selectBookInfo + 'WHERE title = $1';
 
         pool.query(theQuery, [titleQuery])
         .then((result) => {
