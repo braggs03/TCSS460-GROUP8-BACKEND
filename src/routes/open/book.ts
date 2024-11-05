@@ -15,9 +15,6 @@ FROM
     LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
     LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
 
-function mwRatingAverage(rating1:number, rating2:number, rating3:number, rating4:number, rating5:number, count: number): number {
-    return ((rating1 * 1) + (rating2 * 2)+ (rating3 * 3)+ (rating4 * 3)+ (rating5 * 5))/count;
-}
 /**
  * @apiDefine BookInformation
  * @apiSuccess (200: Success) {Object} book the book object containing all information
@@ -129,7 +126,7 @@ bookRouter.get('/isbn',
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
     const yearMin = parseInt(request.query.year_min as string) || 1600;
-    const yearMax = parseInt(request.query.year_max as string);
+    const yearMax = parseInt(request.query.year_max as string) || 3000;
     if (!validationFunctions.validateYear(yearMin, yearMax)) {
         return response.status(400).send({
             message: 'Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.',
@@ -641,7 +638,7 @@ async (request: Request, response: Response) => {
     const rating4 = request.body.rating_4 > 0 ? request.body.rating_4 : 0;
     const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
     const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
-    const ratingAvg = mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
+    const ratingAvg = validationFunctions.mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
     
     const authors = request.body.authors || []; 
     const authorIds: number[] = []; 
