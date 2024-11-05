@@ -387,7 +387,7 @@ bookRouter.get('/series/:name',
 
  * @apiUse BookInformation
  */
-bookRouter.get('/:author', async (request: Request, response: Response) => {
+bookRouter.get('/authors/:author', async (request: Request, response: Response) => {
     const authorName = request.params.author;
     if (!authorName) {
         return response.status(400).send({
@@ -395,7 +395,7 @@ bookRouter.get('/:author', async (request: Request, response: Response) => {
         });
     }
 
-    const theQuery = `SELECT id, author_name FROM AUTHORS WHERE author_name LIKE '%'||$1||'%';`;
+    const theQuery = `SELECT id, author_name FROM AUTHORS WHERE author_name ILIKE '%'||$1||'%';`;
 
     const authorIds = []
 
