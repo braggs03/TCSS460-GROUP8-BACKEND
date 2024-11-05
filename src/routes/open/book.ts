@@ -309,7 +309,24 @@ bookRouter.get('/rating',
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
-bookRouter.get('/series', (request, response) => {});
+bookRouter.get('/series', (request: Request, response: Response) => {
+
+    const theQuery = `
+        SELECT id, series_name
+        FROM SERIES;`
+
+    pool.query(theQuery)
+        .then((result) => {
+            response.send(result.rows);
+        })
+        .catch((error) => {
+            console.error('DB Query error on GET all series');
+            console.error(error);
+            response.status(500).send({
+                message: 'SQL Error. Call 911.',
+            });
+        });
+});
 
 /**
  * @api {get} /book/series/:series Request to get all books in a series.
@@ -320,11 +337,38 @@ bookRouter.get('/series', (request, response) => {});
  * @apiParam {string} series a series name.
  * 
  * @apiSuccess {Book[]} books an array of objects containing book information.
+ * @apiError (400: Missing Name) {String} message "name route parameter is missing."
  * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
  * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiError (500: SQL Error) {String} message "SQL Error. Call 911."
  */
-bookRouter.get('/series/:series', (request, response) => {});
+bookRouter.get('/series/:name',
+    (request: Request, response: Response, next: NextFunction) => {
+        if(request.params.name == undefined) {
+            return response.status(400).send({
+                message: "name route parameter is missing."
+            })
+        }
+        next()
+    },
+    (request: Request, response: Response) => {
+        const theQuery = selectBookInfo + ' WHERE series_name = $1 ORDER BY series_position'
+
+        const values = [request.params.name]
+
+        pool.query(theQuery, values)
+        .then((result) => {
+            response.send(result.rows);
+        })
+        .catch((error) => {
+            console.error('DB Query error on GET all series');
+            console.error(error);
+            response.status(500).send({
+                message: 'SQL Error. Call 911.',
+            });
+        });
+    }
+);
 
 /**
  * @api {get} /book/:author Request to a get a book by author.
