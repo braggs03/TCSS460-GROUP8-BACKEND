@@ -10,6 +10,7 @@ import {
     convertBookInfoToIBookInfo,
     mwRatingAverage,
 } from '../../core/utilities/helpers';
+import { checkToken } from '../../core/middleware';
 
 const bookRouter: Router = express.Router();
 
@@ -30,7 +31,7 @@ const bookRouter: Router = express.Router();
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/isbn',
+    '/isbn', checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (request.query.isbn === undefined) {
             return response.status(400).send({
@@ -93,7 +94,7 @@ bookRouter.get(
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/year', (request: Request, response: Response) => {
+bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
     const yearMin = parseInt(request.query.year_min as string) || 1600;
     const yearMax = parseInt(request.query.year_max as string) || 3000;
     if (!validationFunctions.validateYear(yearMin, yearMax)) {
@@ -139,7 +140,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/title', (request, response) => {
+bookRouter.get('/title', checkToken, (request, response) => {
     const titleQuery = request.query.title as string;
     if (!validationFunctions.validateTitle(titleQuery)) {
         return response.status(400).send({
@@ -186,7 +187,7 @@ bookRouter.get('/title', (request, response) => {
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/rating',
+    '/rating', checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (
             request.query.rating_min === undefined &&
@@ -232,7 +233,7 @@ bookRouter.get(
                         message: 'No books found for the given rating range.',
                     });
                 }
-                response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
+                response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
             })
             .catch((error) => {
                 //log the error
@@ -257,7 +258,7 @@ bookRouter.get(
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/series', (request: Request, response: Response) => {
+bookRouter.get('/series', checkToken, (request: Request, response: Response) => {
     const theQuery = `
         SELECT series_name
         FROM SERIES;`;
@@ -294,7 +295,7 @@ bookRouter.get('/series', (request: Request, response: Response) => {
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/series/:name',
+    '/series/:name', checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (request.params.name == undefined) {
             return response.status(400).send({
@@ -317,7 +318,7 @@ bookRouter.get(
                 console.error('DB Query error on GET all series');
                 console.error(error);
                 response.status(500).send({
-                    message: 'SQL Error. Call 911.',
+                    message: SQL_ERR,
                 });
             });
     }
@@ -339,7 +340,7 @@ bookRouter.get(
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/authors/:author',
+    '/authors/:author', checkToken,
     async (request: Request, response: Response) => {
         const authorName = request.params.author;
         if (!authorName) {
@@ -401,7 +402,7 @@ bookRouter.get(
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/', (request: Request, response: Response) => {
+bookRouter.get('/', checkToken, (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
     const theQuery = getBookInfoQuery() + ' ORDER BY title LIMIT $1 OFFSET $2';
@@ -443,7 +444,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
  * @apiUse JWT
  * @apiUse SQL_ERR 
  */
-bookRouter.delete('/', (request, response) => {
+bookRouter.delete('/', checkToken, (request, response) => {
     response.send('Hello, World!');
 });
 
@@ -468,7 +469,7 @@ bookRouter.delete('/', (request, response) => {
  * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
  * @apiUse JWT
  */
-bookRouter.put('/', async (request: Request, response: Response) => {
+bookRouter.put('/', checkToken, async (request: Request, response: Response) => {
     if (!request.body.isbn) {
         return response.status(400).send({
             message: 'You are missing parameters (either isbn or rating).',
@@ -534,7 +535,7 @@ bookRouter.put('/', async (request: Request, response: Response) => {
  * @apiUse SQL_ERR
  */
 bookRouter.post(
-    '/',
+    '/', checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (
             request.body.isbn13 === undefined ||
