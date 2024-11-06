@@ -414,8 +414,8 @@ bookRouter.get(
             response.status(500).send({
                 message: SQL_ERR,
             });
-    }
-);
+        });
+    });
 
 /**
  * @api {get} /book Request to get all book(s).
@@ -775,7 +775,6 @@ bookRouter.delete(
                     message: SQL_ERR,
                 });
             });
-    })
-});
+    });
 
-export { bookRouter};
+export { bookRouter };
