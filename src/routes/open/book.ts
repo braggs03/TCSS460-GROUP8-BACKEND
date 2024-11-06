@@ -2,19 +2,29 @@ import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
 import { LIMIT_DEFAULT, OFFSET_DEFAULT, RATING_MAX, RATING_MAX_DEFAULT, RATING_MIN, RATING_MIN_DEFAULT } from '../../core/utilities/constants';
 import { AuthRequest } from '../auth/login';
-import { BookInfo, IBook, IRatings, IUrlIcon } from '../../core/utilities/types'
-import { convertBookInfoToIBookInfo } from '../../core/utilities/typeConversions';
+import {
+    BookInfo,
+    IBook,
+    IRatings,
+    IUrlIcon,
+} from '../../core/utilities/types';
+import { getBookInfoQuery, convertBookInfoToIBookInfo } from '../../core/utilities/helpers';
 
 const bookRouter: Router = express.Router();
 
-const selectBookInfo = `
-SELECT DISTINCT
-    book_isbn, publication_year, title, series_name, series_position, rating_avg, rating_count, rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, image_url, image_small_url
-FROM
-    BOOK_MAP
-    LEFT JOIN BOOKS ON BOOK_MAP.book_isbn = BOOKS.isbn13
-    LEFT JOIN SERIES ON BOOK_MAP.series_id = SERIES.id`;
-
+function mwRatingAverage(
+    rating1: number,
+    rating2: number,
+    rating3: number,
+    rating4: number,
+    rating5: number,
+    count: number
+): number {
+    return (
+        (rating1 * 1 + rating2 * 2 + rating3 * 3 + rating4 * 3 + rating5 * 5) /
+        count
+    );
+}
 /**
  * @apiDefine BookInformation
  * @apiSuccess (200: Success) {Object} book the book object containing all information
@@ -67,38 +77,19 @@ bookRouter.get('/isbn',
         return next();
     },
     async (request: Request, response: Response) => {
-        const theQuery = selectBookInfo + ' WHERE book_isbn = $1 LIMIT 1;';
+        const theQuery = getBookInfoQuery("book_isbn = $1");
+        
         const values = [request.query.isbn];
 
-        let book = {}
-        await pool.query(theQuery, values)
+        await pool
+            .query(theQuery, values)
             .then((result) => {
                 if(result.rows.length === 0) {
                     return response.status(404).send({
                         message: 'Book not found.'
                     });
                 }
-                book = result.rows[0];
-            })
-            .catch((error) => {
-                //log the error
-                console.error('DB Query error on GET /isbn');
-                console.error(error);
-                return response.status(500).send({
-                    message: 'server error - contact support',
-                });
-            });
-
-        // if the response has already been sent, don't send it again
-        if(response.headersSent) return;
-
-        const theAuthorQuery = `SELECT author_name FROM
-                                BOOK_MAP LEFT JOIN AUTHORS ON author_id = id
-                                WHERE book_isbn=$1`
-        pool.query(theAuthorQuery, values)
-            .then((result) => {
-                book['authors'] = result.rows.map((row: { author_name: string; }) => row.author_name);
-                return response.send(convertBookInfoToIBookInfo(book as BookInfo));
+                return response.status(200).send(result.rows[0]);
             })
             .catch((error) => {
                 //log the error
@@ -133,34 +124,14 @@ bookRouter.get('/year', (request: Request, response: Response) => {
         });
     }
 
-    const theQuery = selectBookInfo + ` WHERE publication_year BETWEEN $1 AND $2;`;
-    
+    const theQuery = getBookInfoQuery("publication_year BETWEEN $1 AND $2");
+
     pool.query(theQuery, [yearMin, yearMax])
         .then((result) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({ message: 'No books found for the given year range.' });
             }
-            const books = result.rows.map(row => ({
-                    isbn13: row.book_isbn,
-                    authors: row.authors,
-                    publication: row.publication_year,
-                    original_title: row.original_title,
-                    title: row.title,
-                ratings: {
-                    average: row.rating_avg,
-                    count: row.rating_count,
-                    rating_1: row.rating_1_star,
-                    rating_2: row.rating_2_star,
-                    rating_3: row.rating_3_star,
-                    rating_4: row.rating_4_star,
-                    rating_5: row.rating_5_star,
-                },
-                icons: {
-                    large: row.image_url,
-                    small: row.image_small_url,
-                }
-            }));
-            response.send(books);
+            return response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
         })
         .catch((error) => {
             console.error('DB Query error on GET by year');
@@ -191,7 +162,7 @@ bookRouter.get('/title', (request, response) => {
             message: 'Title was not provided',
         });
     }
-    const theQuery = selectBookInfo + ` WHERE title LIKE '%'||$1||'%';`
+    const theQuery = getBookInfoQuery("title LIKE '%'||$1||'%'");
 
         pool.query(theQuery, [titleQuery])
         .then((result) => {
@@ -267,7 +238,7 @@ bookRouter.get('/rating',
         }
     },
     (request: Request, response: Response) => {
-        const query = selectBookInfo + ' WHERE rating_avg >= $1 AND rating_avg <= $2 ORDER BY rating_avg DESC LIMIT $3 OFFSET $4'
+        const query = getBookInfoQuery("rating_avg BETWEEN $1 AND $2") + ' ORDER BY rating_avg DESC LIMIT $3 OFFSET $4';
         const values = [
             request.query.rating_min, 
             request.query.rating_max,
@@ -348,7 +319,7 @@ bookRouter.get('/series/:name',
         next()
     },
     (request: Request, response: Response) => {
-        const theQuery = selectBookInfo + ' WHERE series_name = $1 ORDER BY series_position'
+        const theQuery = getBookInfoQuery("series_name = $1") + ' ORDER BY series_position';
 
         const values = [request.params.name]
 
@@ -416,7 +387,7 @@ bookRouter.get('/:author', async (request: Request, response: Response) => {
     
     if(response.headersSent) return;
 
-    const theBookQuery = selectBookInfo + ' WHERE author_id = ANY($1::integer[]);';
+    const theBookQuery = getBookInfoQuery("author_id = ANY($1::integer[])");
 
     await pool.query(theBookQuery, [authorIds])
         .then((result) => {
@@ -474,7 +445,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
     const limit: number = request.query.limit ? +request.query.limit : LIMIT_DEFAULT;
     const offset: number = request.query.offset ? +request.query.offset : OFFSET_DEFAULT;
 
-    const theQuery = selectBookInfo;
+    const theQuery = getBookInfoQuery();
 
     const values = [limit, offset];
 
@@ -611,37 +582,48 @@ bookRouter.post('/',(request: Request, response: Response, next: NextFunction) =
         });
     }
 
-    if (
-        !validationFunctions.isNumberProvided(request.body.isbn13) ||
-        !validationFunctions.validateISBN(request.body.isbn13 as unknown as number)
-    ) {
-        return response.status(400).send({
-            message: 'ISBN not valid. ISBN should be a positive 13 or 10 digit number.'
-        }); 
-    }
-    if(
-        !validationFunctions.validateTitle(request.body.title) ||
-        !validationFunctions.validatePostYear(request.body.publication_year)
-    ) {
-        return response.status(400).send({
-            message: 'Title is empty and/or year is not in the range of 1600 - 3000'
-        });
-    }
-    
-    return next();
-},
-async (request: Request, response: Response) => {
-    let bookISBN = request.body.isbn13;
-    const rating1 = request.body.rating_1 > 0 ? request.body.rating_1 : 0;
-    const rating2 = request.body.rating_2 > 0 ? request.body.rating_2 : 0;
-    const rating3 = request.body.rating_3 > 0 ? request.body.rating_3 : 0;
-    const rating4 = request.body.rating_4 > 0 ? request.body.rating_4 : 0;
-    const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
-    const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
-    const ratingAvg = validationFunctions.mwRatingAverage(rating1, rating2, rating3, rating4, rating5, ratingCount);
-    
-    const authors = request.body.authors || []; 
-    const authorIds: number[] = []; 
+        if (
+            !validationFunctions.isNumberProvided(request.body.isbn13) ||
+            !validationFunctions.validateISBN(
+                request.body.isbn13 as unknown as number
+            )
+        ) {
+            return response.status(400).send({
+                message:
+                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+            });
+        }
+        if (
+            !validationFunctions.validateTitle(request.body.title) ||
+            !validationFunctions.validatePostYear(request.body.publication_year)
+        ) {
+            return response.status(400).send({
+                message:
+                    'Title is empty and/or year is not in the range of 1600 - 3000',
+            });
+        }
+
+        return next();
+    },
+    async (request: Request, response: Response) => {
+        const bookISBN = request.body.isbn13;
+        const rating1 = request.body.rating_1 > 0 ? request.body.rating_1 : 0;
+        const rating2 = request.body.rating_2 > 0 ? request.body.rating_2 : 0;
+        const rating3 = request.body.rating_3 > 0 ? request.body.rating_3 : 0;
+        const rating4 = request.body.rating_4 > 0 ? request.body.rating_4 : 0;
+        const rating5 = request.body.rating_5 > 0 ? request.body.rating_5 : 0;
+        const ratingCount = rating1 + rating2 + rating3 + rating4 + rating5;
+        const ratingAvg = mwRatingAverage(
+            rating1,
+            rating2,
+            rating3,
+            rating4,
+            rating5,
+            ratingCount
+        );
+
+        const authors = request.body.authors || [];
+        const authorIds: number[] = [];
 
     for (const authorName of authors) {
         const authorQuery = `SELECT id FROM AUTHORS WHERE author_name = $1`;

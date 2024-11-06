@@ -1,6 +1,6 @@
 interface BookInfo {
     book_isbn: number;
-    authors: string[];
+    authors: string;
     publication_year: number;
     original_title: string; 
     title: string;
