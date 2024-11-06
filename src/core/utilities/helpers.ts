@@ -146,14 +146,11 @@ function determineRatingChange(newRating: number): number {
     if (newRating === -1) return -1; 
     return 0; 
 }
-
-<<<<<<< HEAD
-export { getBookInfoQuery, convertBookInfoToIBookInfo, mwRatingAverage, determineRatingChange }
-=======
 export {
     getBookInfoQuery,
     getDeleteBookQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
+    determineRatingChange
 };
->>>>>>> ac41bd267d3bbc9784014748f52f76cf624aa1e9
+

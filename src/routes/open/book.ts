@@ -9,11 +9,8 @@ import {
     getBookInfoQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
-<<<<<<< HEAD
     determineRatingChange,
-=======
     getDeleteBookQuery,
->>>>>>> ac41bd267d3bbc9784014748f52f76cf624aa1e9
 } from '../../core/utilities/helpers';
 import { checkToken } from '../../core/middleware';
 
@@ -166,7 +163,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
                 .send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
         })
         .catch((error) => {
-            console.error('DB Query error on GET all');
+            console.error('DB Query error on GET title');
             console.error(error);
             response.status(500).send({
                 message: SQL_ERR,
@@ -476,30 +473,21 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
-<<<<<<< HEAD
  * @apiBody {number} [new_star1] new_star1 1 stars of the book that needs to be updated
- * @apiBody {number} [new_star2] new_star2 2 stars stars of the book that needs to be updated
- * @apiBody {number} [new_star3] new_star3 3 stars stars of the book that needs to be updated
- * @apiBody {number} [new_star4] new_star4 4 stars stars of the book that needs to be updated
- * @apiBody {number} [new_star5] new_star5 5 stars stars of the book that needs to be updated
+ * @apiBody {number} [new_star2] new_star2 2 stars of the book that needs to be updated
+ * @apiBody {number} [new_star3] new_star3 3 stars of the book that needs to be updated
+ * @apiBody {number} [new_star4] new_star4 4 stars of the book that needs to be updated
+ * @apiBody {number} [new_star5] new_star5 5 stars of the book that needs to be updated
  * 
- * @apiSuccess {String} success the rating(s) were successfully updated
-=======
- * @apiBody {number} [rating_1] rating_1 the number of 1 stars of the book that needs to be added
- * @apiBody {number} [rating_2] rating_2 the number of 2 stars of the book that needs to be added
- * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
- * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
- * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
  *
- * @apiSuccess {String} success the rating was successfully updated
->>>>>>> ac41bd267d3bbc9784014748f52f76cf624aa1e9
+ * @apiSuccess {string} success the rating was successfully updated.
  *
- * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
- * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined. You must update at least one rating!
+ * @apiError (404: Book Not Found) {String} message ISBN does not exist - update failed.
+ * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined or 0. You must update at least one rating!
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
-<<<<<<< HEAD
-bookRouter.put('/', (request: Request, response: Response) => {
+bookRouter.put('/', checkToken, (request: Request, response: Response) => {
     if (!request.body.isbn) {
         return response.status(400).send({
             message: 'You are missing parameters (either isbn or rating). You MUST provide an ISBN and at least 1 rating to update.',
@@ -555,45 +543,8 @@ bookRouter.put('/', (request: Request, response: Response) => {
             });
         });
     });
-=======
-bookRouter.put(
-    '/',
-    checkToken,
-    async (request: Request, response: Response) => {
-        if (!request.body.isbn) {
-            return response.status(400).send({
-                message: 'You are missing parameters (either isbn or rating).',
-            });
-        }
 
-        if (
-            request.body.rating_1 === undefined &&
-            request.body.rating_2 === undefined &&
-            request.body.rating_3 === undefined &&
-            request.body.rating_4 === undefined &&
-            request.body.rating_5 === undefined
-        ) {
-            return response.status(400).send({
-                message: 'You are missing parameters (either isbn or rating).',
-            });
-        }
 
-        const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
-                       FROM BOOKS 
-                       WHERE isbn13 = $1`;
-        const currentBook = await pool.query(bookQuery, [request.body.isbn]);
-        if (currentBook.rows.length === 0) {
-            return response.status(404).send({
-                message: 'Book with given ISBN cannot be found. Update failed.',
-            });
-        }
-
-        response.send({
-            success: 'The rating was successfully updated.',
-        });
-    }
-);
->>>>>>> ac41bd267d3bbc9784014748f52f76cf624aa1e9
 
 /**
  * @api {post} /book Request to add a book
@@ -700,7 +651,7 @@ bookRouter.post(
                 authorIds.push(insertResult.rows[0].id);
             }
         }
-        const seriesName = request.body.series || '';
+
         let seriesId: number = null;
         if (request.body.series && request.body.series.name) {
             const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
@@ -739,21 +690,7 @@ bookRouter.post(
             ])
             .then((result) => {
                 response.status(201).send({
-                    isbn13: bookISBN,
-                    publication_year: request.body.publication_year,
-                    title: request.body.title,
-                    rating_avg: ratingAvg,
-                    rating_Count: ratingCount,
-                    rating_1: rating1,
-                    rating_2: rating2,
-                    rating_3: rating3,
-                    rating_4: rating4,
-                    rating_5: rating5,
-                    image_url: request.body.image_url,
-                    image_small_url: request.body.image_small_url,
-                    authors: authors,
-                    series_name: seriesName,
-                    series_pos: seriesId,
+                    entries: result.rows.map(convertBookInfoToIBookInfo)
                 });
             })
             .catch((error) => {
@@ -840,7 +777,7 @@ bookRouter.delete(
                     message: SQL_ERR,
                 });
             });
-    }
-);
+    })
+});
 
-export { bookRouter };
+export { bookRouter};
