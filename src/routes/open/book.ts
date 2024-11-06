@@ -404,8 +404,7 @@ bookRouter.get(
 
         if (response.headersSent) return;
 
-        const theBookQuery =
-        selectBookInfo + ' WHERE author_id = ANY($1::integer[]);';
+        const theBookQuery = getBookInfoQuery('author_id = ANY($1::integer[])');
 
     await pool
         .query(theBookQuery, [authorIds])
