@@ -473,11 +473,11 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
- * @apiBody {number} [new_star1] new_star1 1 stars of the book that needs to be updated
- * @apiBody {number} [new_star2] new_star2 2 stars of the book that needs to be updated
- * @apiBody {number} [new_star3] new_star3 3 stars of the book that needs to be updated
- * @apiBody {number} [new_star4] new_star4 4 stars of the book that needs to be updated
- * @apiBody {number} [new_star5] new_star5 5 stars of the book that needs to be updated
+ * @apiBody {number} [new_star1] 1 stars of the book that needs to be updated
+ * @apiBody {number} [new_star2] 2 stars of the book that needs to be updated
+ * @apiBody {number} [new_star3] 3 stars of the book that needs to be updated
+ * @apiBody {number} [new_star4] 4 stars of the book that needs to be updated
+ * @apiBody {number} [new_star5] 5 stars of the book that needs to be updated
  * 
  *
  * @apiSuccess {string} success the rating was successfully updated.
@@ -586,7 +586,7 @@ bookRouter.post(
             request.body.publication_year === undefined ||
             request.body.title === undefined ||
             request.body.image_url === undefined ||
-            request.body.image_small_url === undefined
+            request.body.small_url === undefined
         ) {
             return response.status(400).send({
                 message:
@@ -686,7 +686,7 @@ bookRouter.post(
                 rating4,
                 rating5,
                 request.body.image_url,
-                request.body.image_small_url,
+                request.body.small_url,
             ])
             .then((result) => {
                 response.status(201).send({
