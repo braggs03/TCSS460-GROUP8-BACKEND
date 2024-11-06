@@ -10,7 +10,11 @@ const RATING_MIN_DEFAULT: number = 1;
 const LIMIT_DEFAULT: number = 10;
 const OFFSET_DEFAULT: number = 0;
 
-export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_DEFAULT, OFFSET_DEFAULT }
+// Response Messages
+
+const SQL_ERR: string = 'Server error. Please contact support.'
+
+export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_DEFAULT, OFFSET_DEFAULT, SQL_ERR }
 
 /**
  * @apiDefine IBook
@@ -25,7 +29,7 @@ export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_D
 
 /**
  * @apiDefine SQL_ERR
- * @apiError (500: Server Error) {string} message Please contact support.
+ * @apiError (500: Server Error) {string} message Server error. Please contact support.
  */
 
 /**

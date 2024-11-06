@@ -7,6 +7,7 @@ import {
     RATING_MAX_DEFAULT,
     RATING_MIN,
     RATING_MIN_DEFAULT,
+    SQL_ERR,
 } from '../../core/utilities/constants';
 import { AuthRequest } from '../auth/login';
 import {
@@ -92,7 +93,7 @@ bookRouter.get(
                 console.error('DB Query error on GET /isbn');
                 console.error(error);
                 return response.status(500).send({
-                    message: 'server error - contact support',
+                    message: SQL_ERR,
                 });
             });
     }
@@ -142,7 +143,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
             console.error(error);
             response
                 .status(500)
-                .send({ message: 'server error - contact support' });
+                .send({ message: SQL_ERR });
         });
 });
 
@@ -164,7 +165,7 @@ bookRouter.get('/title', (request, response) => {
     const titleQuery = request.query.title as string;
     if (!validationFunctions.validateTitle(titleQuery)) {
         return response.status(400).send({
-            message: 'Title was not provided',
+            message: 'Title was not provided. Please review documentation.',
         });
     }
     const theQuery = getBookInfoQuery("title LIKE '%'||$1||'%'");
@@ -198,7 +199,7 @@ bookRouter.get('/title', (request, response) => {
             console.error('DB Query error on GET all');
             console.error(error);
             response.status(500).send({
-                message: 'Server error - contact support',
+                message: SQL_ERR,
             });
         });
 });
@@ -270,7 +271,7 @@ bookRouter.get(
                 console.error('DB Query error on GET /ratings');
                 console.error(error);
                 response.status(500).send({
-                    message: 'server error - contact support',
+                    message: SQL_ERR,
                 });
             });
     }
@@ -397,7 +398,7 @@ bookRouter.get(
             .catch((error) => {
                 console.error('DB Query error on GET /:author', error);
                 response.status(500).send({
-                    message: 'Server error - contact support',
+                    message: SQL_ERR,
                 });
             });
 
@@ -414,7 +415,7 @@ bookRouter.get(
         .catch((error) => {
             console.error('DB Query error on GET /:author', error);
             response.status(500).send({
-                message: 'Server error - contact support',
+                message: SQL_ERR,
             });
         });
 });
@@ -441,7 +442,7 @@ bookRouter.get('/', (request: Request, response: Response) => {
             console.error('DB Query error on GET all');
             console.error(error);
             response.status(500).send({
-                message: 'Server error - contact support',
+                message: SQL_ERR,
         });
     });
 });
@@ -702,7 +703,7 @@ bookRouter.post(
                     console.error('DB Query error on POST');
                     console.error(error);
                     response.status(500).send({
-                        message: 'server error - contact support',
+                        message: SQL_ERR,
                     });
                 }
             });
