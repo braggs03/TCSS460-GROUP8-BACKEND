@@ -480,7 +480,7 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
  * @apiBody {number} [new_star5] 5 stars of the book that needs to be updated
  * 
  *
- * @apiSuccess {string} success the rating was successfully updated.
+ * @apiUse IBook
  *
  * @apiError (404: Book Not Found) {String} message ISBN does not exist - update failed.
  * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined or 0. You must update at least one rating!
@@ -568,7 +568,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiBody {string} image_url the url of the book that needs to be added
  * @apiBody {string} small_url the small image
  *
- * @apiSuccess (Success 201) {String} success the book was added
+ * @apiSuccess (Success 201) {String} success the book was created
  *
  * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
  * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 or 10 digit number.
