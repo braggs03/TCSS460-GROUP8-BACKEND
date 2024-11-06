@@ -9,6 +9,7 @@ import {
     getBookInfoQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
+    getDeleteBookQuery,
 } from '../../core/utilities/helpers';
 import { checkToken } from '../../core/middleware';
 
@@ -31,7 +32,8 @@ const bookRouter: Router = express.Router();
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/isbn', checkToken,
+    '/isbn',
+    checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (request.query.isbn === undefined) {
             return response.status(400).send({
@@ -82,7 +84,7 @@ bookRouter.get(
  * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
  * @apiName GetBookByYear
  * @apiGroup Book
- * 
+ *
  * @apiQuery {number} [year_min = 1600] a minimum year for the range
  * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
@@ -120,9 +122,7 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
         .catch((error) => {
             console.error('DB Query error on GET by year');
             console.error(error);
-            response
-                .status(500)
-                .send({ message: SQL_ERR });
+            response.status(500).send({ message: SQL_ERR });
         });
 });
 
@@ -189,7 +189,8 @@ bookRouter.get('/title', checkToken, (request, response) => {
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/rating', checkToken,
+    '/rating',
+    checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (
             request.query.rating_min === undefined &&
@@ -199,8 +200,14 @@ bookRouter.get(
                 message: 'Missing maximum and minimum rating.',
             });
         } else {
-            const ratingMin: number = request.query.rating_min !== undefined ? +request.query.rating_min : RATING_MIN_DEFAULT;
-            const ratingMax: number = request.query.rating_max !== undefined ? +request.query.rating_max : RATING_MAX_DEFAULT;
+            const ratingMin: number =
+                request.query.rating_min !== undefined
+                    ? +request.query.rating_min
+                    : RATING_MIN_DEFAULT;
+            const ratingMax: number =
+                request.query.rating_max !== undefined
+                    ? +request.query.rating_max
+                    : RATING_MAX_DEFAULT;
             if (
                 validationFunctions.isNumberProvided(ratingMin) &&
                 validationFunctions.isNumberProvided(ratingMax) &&
@@ -235,7 +242,7 @@ bookRouter.get(
 
         pool.query(query, values)
             .then((result) => {
-                if(result.rows.length === 0) {
+                if (result.rows.length === 0) {
                     return response.status(404).send({
                         message: 'No books found for the given rating range.',
                     });
@@ -268,32 +275,36 @@ bookRouter.get(
  * @apiGroup Book
  *
  * @apiUse IBook
- * 
- * 
+ *
+ *
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/series', checkToken, (request: Request, response: Response) => {
-    const theQuery = `
+bookRouter.get(
+    '/series',
+    checkToken,
+    (request: Request, response: Response) => {
+        const theQuery = `
         SELECT series_name
         FROM SERIES;`;
 
-    pool.query(theQuery)
-        .then((result) => {
-            const names = { series_names: [] };
-            for (const row of result.rows) {
-                names.series_names.push(row.series_name);
-            }
-            response.send(names);
-        })
-        .catch((error) => {
-            console.error('DB Query error on GET all series');
-            console.error(error);
-            response.status(500).send({
-                message: 'SQL Error. Call 911.',
+        pool.query(theQuery)
+            .then((result) => {
+                const names = { series_names: [] };
+                for (const row of result.rows) {
+                    names.series_names.push(row.series_name);
+                }
+                response.send(names);
+            })
+            .catch((error) => {
+                console.error('DB Query error on GET all series');
+                console.error(error);
+                response.status(500).send({
+                    message: 'SQL Error. Call 911.',
+                });
             });
-        });
-});
+    }
+);
 
 /**
  * @api {get} /book/series/:series Request to get all books in a series.
@@ -310,7 +321,8 @@ bookRouter.get('/series', checkToken, (request: Request, response: Response) => 
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/series/:name', checkToken,
+    '/series/:name',
+    checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (request.params.name == undefined) {
             return response.status(400).send({
@@ -355,7 +367,8 @@ bookRouter.get(
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/authors/:author', checkToken,
+    '/authors/:author',
+    checkToken,
     async (request: Request, response: Response) => {
         const authorName = request.params.author;
         if (!authorName) {
@@ -401,8 +414,8 @@ bookRouter.get(
             response.status(500).send({
                 message: SQL_ERR,
             });
-        });
-});
+    }
+);
 
 /**
  * @api {get} /book Request to get all book(s).
@@ -445,36 +458,8 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
             console.error(error);
             response.status(500).send({
                 message: SQL_ERR,
+            });
         });
-    });
-});
-
-/**
- * @api {delete} /book Request to delete book(s).
- * @apiName DeleteBookByAttributes
- * @apiGroup Book
- *
- * @apiBody {String} [isbn] a book ISBN.
- * @apiBody {String} [title] a book title.
- * @apiBody {String} [author] a book author.
- * @apiBody {String} [rating_min=0] a book rating.
- * @apiBody {String} [rating_max=5] a book rating.
- * @apiBody {String} [year_min=1600] a book year.
- * @apiBody {String} [year_max=3000] a book year.
- *
- * @apiSuccess {Book} success an object showcasing the deleted book.
- *
- * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
- * @apiError (400: Title Parameter Invalid) {String} message "Title parameter is invalid. A title should be a non-empty string."
- * @apiError (400: Author Parameter Invalid) {String} message "Author parameter is invalid. An author should be a non-empty string."
- * @apiError (400: Rating Parameter Invalid) {String} message "Rating parameter is invalid. A rating should be a number between 0 and 5. Additionally, the minimum rating should be less than or equal to the maximum rating."
- * @apiError (400: Year Parameter Invalid) {String} message "Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year."
- * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
- * @apiUse JWT
- * @apiUse SQL_ERR 
- */
-bookRouter.delete('/', checkToken, (request, response) => {
-    response.send('Hello, World!');
 });
 
 /**
@@ -491,46 +476,50 @@ bookRouter.delete('/', checkToken, (request, response) => {
  * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
  * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
  * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
- * 
+ *
  * @apiSuccess {String} success the rating was successfully updated
  *
  * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
  * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
  * @apiUse JWT
  */
-bookRouter.put('/', checkToken, async (request: Request, response: Response) => {
-    if (!request.body.isbn) {
-        return response.status(400).send({
-            message: 'You are missing parameters (either isbn or rating).',
-        });
-    }
+bookRouter.put(
+    '/',
+    checkToken,
+    async (request: Request, response: Response) => {
+        if (!request.body.isbn) {
+            return response.status(400).send({
+                message: 'You are missing parameters (either isbn or rating).',
+            });
+        }
 
-    if (
-        request.body.rating_1 === undefined &&
-        request.body.rating_2 === undefined &&
-        request.body.rating_3 === undefined &&
-        request.body.rating_4 === undefined &&
-        request.body.rating_5 === undefined
-    ) {
-        return response.status(400).send({
-            message: 'You are missing parameters (either isbn or rating).',
-        });
-    }
+        if (
+            request.body.rating_1 === undefined &&
+            request.body.rating_2 === undefined &&
+            request.body.rating_3 === undefined &&
+            request.body.rating_4 === undefined &&
+            request.body.rating_5 === undefined
+        ) {
+            return response.status(400).send({
+                message: 'You are missing parameters (either isbn or rating).',
+            });
+        }
 
-    const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
+        const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
                        FROM BOOKS 
                        WHERE isbn13 = $1`;
-    const currentBook = await pool.query(bookQuery, [request.body.isbn]);
-    if (currentBook.rows.length === 0) {
-        return response.status(404).send({
-            message: 'Book with given ISBN cannot be found. Update failed.',
+        const currentBook = await pool.query(bookQuery, [request.body.isbn]);
+        if (currentBook.rows.length === 0) {
+            return response.status(404).send({
+                message: 'Book with given ISBN cannot be found. Update failed.',
+            });
+        }
+
+        response.send({
+            success: 'The rating was successfully updated.',
         });
     }
-
-    response.send({
-        success: 'The rating was successfully updated.',
-    });
-});
+);
 
 /**
  * @api {post} /book Request to add a book
@@ -564,7 +553,8 @@ bookRouter.put('/', checkToken, async (request: Request, response: Response) => 
  * @apiUse SQL_ERR
  */
 bookRouter.post(
-    '/', checkToken,
+    '/',
+    checkToken,
     (request: Request, response: Response, next: NextFunction) => {
         if (
             request.body.isbn13 === undefined ||
@@ -717,6 +707,68 @@ bookRouter.post(
                 [request.body.isbn13, idOfAuthor, seriesId, seriesPos]
             );
         }
+    }
+);
+
+/**
+ * @api {delete} /book Request to delete book(s).
+ * @apiName DeleteBookByISBN
+ * @apiGroup Book
+ *
+ * @apiBody {String} [isbn] a book ISBN.
+ *
+ * @apiSuccess {Book} success an object showcasing the deleted book.
+ *
+ * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
+ * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
+ * @apiUse JWT
+ * @apiUse SQL_ERR
+ */
+bookRouter.delete(
+    '/isbn',
+    checkToken,
+    (request: Request, response: Response, next: NextFunction) => {
+        if (request.query.isbn === undefined) {
+            return response.status(400).send({
+                message: "Missing 'isbn' query parameter.",
+            });
+        }
+        if (
+            !validationFunctions.isNumberProvided(request.query.isbn) ||
+            !validationFunctions.validateISBN(
+                request.query.isbn as unknown as number
+            )
+        ) {
+            return response.status(400).send({
+                message:
+                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+            });
+        }
+        next();
+    },
+    async (request: Request, response: Response) => {
+        const theQuery = getDeleteBookQuery('isbn13 = $1');
+        const values = [request.query.isbn];
+
+        pool.query(theQuery, values)
+            .then((result) => {
+                if (result.rows.length === 0) {
+                    return response.status(404).send({
+                        message:
+                            'No books found that meet the search criteria. Try again with a different search criteria.',
+                    });
+                }
+                response
+                    .status(200)
+                    .send(result.rows.map(convertBookInfoToIBookInfo));
+            })
+            .catch((error) => {
+                console.error('DB Query error on DELETE /isbn');
+                console.error(error);
+                response.status(500).send({
+                    message: SQL_ERR,
+                });
+            });
     }
 );
 
