@@ -1,21 +1,10 @@
 import express, { NextFunction, Router, Request, Response } from 'express';
 import { pool, validationFunctions } from '../../core/utilities';
 import {
-    LIMIT_DEFAULT,
-    OFFSET_DEFAULT,
-    RATING_MAX,
     RATING_MAX_DEFAULT,
-    RATING_MIN,
     RATING_MIN_DEFAULT,
     SQL_ERR,
 } from '../../core/utilities/constants';
-import { AuthRequest } from '../auth/login';
-import {
-    BookInfo,
-    IBook,
-    IRatings,
-    IUrlIcon,
-} from '../../core/utilities/types';
 import {
     getBookInfoQuery,
     convertBookInfoToIBookInfo,
@@ -39,6 +28,7 @@ function mwRatingAverage(
 
 /**
  * @api {get} /book/isbn Request to get a book by ISBN.
+ * @apiDescription Retrieve a book by a valid ISBN13. The ISBN13 must be valid and passed in as a number.
  * @apiName GetBookByISBN
  * @apiGroup Book
  *
@@ -104,8 +94,9 @@ bookRouter.get(
  * @apiDescription You can request a range of books by year (e.g 2020-2022). If a user only wants to search by one year, enter the same number for both parameters (e.g: 2022-2022).
  * @apiName GetBookByYear
  * @apiGroup Book
+ * 
  * @apiQuery {number} [year_min = 1600] a minimum year for the range
- * @apiQuery {number} max a maximum year for the range
+ * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
  * @apiUse IBook
  *
@@ -192,8 +183,7 @@ bookRouter.get('/title', (request, response) => {
 
 /**
  * @api {get} /book/rating Request to books within a given range of ratings.
- * @apiDescription If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively.
- * If a specific rating is required, set rating_min and rating_max to the same value. If no ratings are provided, default values of 1 and 5 are used for the min and max, respectfully.
+ * @apiDescription If book(s) from a point and up are desired, only set rating_min. If book(s) from a point and below are desired, only set rating_max. Both can be suppiled to get the book(s) within that range inclusively. If a specific rating is required, set rating_min and rating_max to the same value. If no ratings are provided, default values of 1 and 5 are used for the min and max, respectfully.
  * @apiName GetBookByRating
  * @apiGroup Book
  *
@@ -219,8 +209,8 @@ bookRouter.get(
                 message: 'Missing maximum and minimum rating.',
             });
         } else {
-            const ratingMin: number = +request.query.rating_min;
-            const ratingMax: number = +request.query.rating_max;
+            const ratingMin: number = request.query.rating_min !== undefined ? +request.query.rating_min : RATING_MIN_DEFAULT;
+            const ratingMax: number = request.query.rating_max !== undefined ? +request.query.rating_max : RATING_MAX_DEFAULT;
             if (
                 validationFunctions.isNumberProvided(ratingMin) &&
                 validationFunctions.isNumberProvided(ratingMax) &&
@@ -270,7 +260,7 @@ bookRouter.get(
 
 /**
  * @api {get} /book/series Request to get all series names
- *
+ * @apiDescription Used to retrieve the name of all series names.
  * @apiName GetSeriesNames
  * @apiGroup Book
  *
@@ -304,7 +294,7 @@ bookRouter.get('/series', (request: Request, response: Response) => {
 
 /**
  * @api {get} /book/series/:series Request to get all books in a series.
- *
+ * @apiDescription Used to retrieve all books in a series. Series name must match exactly. If exact series name is unknown, consult /book/series route.
  * @apiName GetBooksInSeries
  * @apiGroup Book
  *
@@ -348,6 +338,7 @@ bookRouter.get(
 
 /**
  * @api {get} /book/:author Request to a get a book by author.
+ * @apiDescription Used to retrieve all books in by an author. Author name must match exactly.
  * @apiName GetBookByAuthor
  * @apiGroup Book
  *
@@ -412,10 +403,14 @@ bookRouter.get(
 
 /**
  * @api {get} /book Request to get all book(s).
+ * @apiDescription Retrieves all books in the database.
  * @apiName GetAllBooks
  * @apiGroup Book
+ * 
  * @apiUse Pagination
  *
+ * @apiUse IBook
+ * 
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
