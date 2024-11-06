@@ -86,5 +86,10 @@ function mwRatingAverage(
         count
     );
 }
+function determineRatingChange(newRating: number): number {
+    if (newRating === 1) return 1; 
+    if (newRating === -1) return -1; 
+    return 0; 
+}
 
-export { getBookInfoQuery, convertBookInfoToIBookInfo, mwRatingAverage }
+export { getBookInfoQuery, convertBookInfoToIBookInfo, mwRatingAverage, determineRatingChange }

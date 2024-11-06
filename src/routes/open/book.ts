@@ -9,6 +9,7 @@ import {
     getBookInfoQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
+    determineRatingChange,
 } from '../../core/utilities/helpers';
 
 const bookRouter: Router = express.Router();
@@ -450,57 +451,81 @@ bookRouter.delete('/', (request, response) => {
 /**
  * @api {put} /book Request to change a book by rating
  *
- * @apiDescription Request to change a book's rating (by adding/changing stars).
+ * @apiDescription Request to change a book's rating (by adding/changing stars). If the user enters a 1 into the field, the rating is +1, if it's 0/undefined, the rating is not changed,
+ * if the rating is given -1, then we subtract -1 from that rating. A user cannot send no ratings to be updated...
  *
  * @apiName PutBook
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
- * @apiBody {number} [rating_1] rating_1 the number of 1 stars of the book that needs to be added
- * @apiBody {number} [rating_2] rating_2 the number of 2 stars of the book that needs to be added
- * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
- * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
- * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
+ * @apiBody {number} [new_star1] new_star1 1 stars of the book that needs to be updated
+ * @apiBody {number} [new_star2] new_star2 2 stars stars of the book that needs to be updated
+ * @apiBody {number} [new_star3] new_star3 3 stars stars of the book that needs to be updated
+ * @apiBody {number} [new_star4] new_star4 4 stars stars of the book that needs to be updated
+ * @apiBody {number} [new_star5] new_star5 5 stars stars of the book that needs to be updated
  * 
- * @apiSuccess {String} success the rating was successfully updated
+ * @apiSuccess {String} success the rating(s) were successfully updated
  *
  * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
- * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
+ * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined. You must update at least one rating!
  * @apiUse JWT
  */
-bookRouter.put('/', async (request: Request, response: Response) => {
+bookRouter.put('/', (request: Request, response: Response) => {
     if (!request.body.isbn) {
         return response.status(400).send({
-            message: 'You are missing parameters (either isbn or rating).',
+            message: 'You are missing parameters (either isbn or rating). You MUST provide an ISBN and at least 1 rating to update.',
         });
     }
-
     if (
-        request.body.rating_1 === undefined &&
-        request.body.rating_2 === undefined &&
-        request.body.rating_3 === undefined &&
-        request.body.rating_4 === undefined &&
-        request.body.rating_5 === undefined
-    ) {
+        (request.body.new_star1 === undefined &&
+        request.body.new_star2 === undefined &&
+        request.body.new_star3 === undefined &&
+        request.body.new_star4 === undefined &&
+        request.body.new_star5 === undefined) ||
+        (request.body.new_star1 === 0 &&
+            request.body.new_star2 === 0 &&
+            request.body.new_star3 === 0 &&
+            request.body.new_star4 === 0 &&
+            request.body.new_star5 === 0)) {
         return response.status(400).send({
-            message: 'You are missing parameters (either isbn or rating).',
+            message: 'You cannot leave all ratings undefined or 0. You must update at least one rating!',
         });
     }
-
-    const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
-                       FROM BOOKS 
-                       WHERE isbn13 = $1`;
-    const currentBook = await pool.query(bookQuery, [request.body.isbn]);
-    if (currentBook.rows.length === 0) {
-        return response.status(404).send({
-            message: 'Book with given ISBN cannot be found. Update failed.',
+    const theQuery = getBookInfoQuery('book_isbn = $1');
+    pool.query(theQuery, [request.body.isbn])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                return response.status(404).send({
+                    message: 'ISBN does not exist - update failed.'
+                });
+            }
+            const newStars = [request.body.new_star1, request.body.new_star2, request.body.new_star3, request.body.new_star4, request.body.new_star5];
+            const ratingChange = newStars.map((rating, index) => determineRatingChange(rating) + result.rows[0][`rating_${index+1}_star`]);
+            const ratingCount = ratingChange[0] + ratingChange[1] + ratingChange[2]+ ratingChange[3] + ratingChange[4];
+            const ratingAvg = mwRatingAverage(ratingChange[0] ,ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount);
+            const updateQuery = `
+            UPDATE BOOKS
+            SET 
+                rating_1_star = $1,
+                rating_2_star = $2,
+                rating_3_star = $3,
+                rating_4_star = $4,
+                rating_5_star = $5,
+                rating_count = $6,
+                rating_avg = $7
+            WHERE isbn13 = $8; `;
+            pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
+                .then(() => {
+                    return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+                });
+        })
+        .catch((error) => {
+            console.error(error);
+            return response.status(500).send({
+                message: SQL_ERR,
+            });
         });
-    }
-
-    response.send({
-        success: 'The rating was successfully updated.',
     });
-});
 
 /**
  * @api {post} /book Request to add a book
@@ -667,13 +692,10 @@ bookRouter.post(
                     error.detail != undefined &&
                     (error.detail as string).endsWith('already exists.')
                 ) {
-                    console.error('Name exists');
                     response.status(400).send({
-                        message: 'Name exists',
+                        message: 'Cannot have duplicate ISBNs! Try a different value.',
                     });
                 } else {
-                    //log the error
-                    console.error('DB Query error on POST');
                     console.error(error);
                     response.status(500).send({
                         message: SQL_ERR,
