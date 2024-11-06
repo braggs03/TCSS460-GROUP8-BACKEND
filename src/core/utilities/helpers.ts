@@ -44,7 +44,7 @@ function getBookInfoQuery(WHERE: string = '1 = 1'): string {
 }
 
 function convertBookInfoToIBookInfo(bookInfo: BookInfo): IBook {
-    return {
+    const book: IBook = {
         isbn13: bookInfo.book_isbn,
         authors: bookInfo.authors,
         publication: bookInfo.publication_year,
@@ -62,11 +62,15 @@ function convertBookInfoToIBookInfo(bookInfo: BookInfo): IBook {
             large: bookInfo.image_url,
             small: bookInfo.image_small_url
         },
-        series_info: {
+        
+    }
+    if(bookInfo.series_name) {
+        book.series_info = {
             name: bookInfo.series_name,
             position: bookInfo.series_position
         }
     }
+    return book
 }
 
 export { getBookInfoQuery, convertBookInfoToIBookInfo }

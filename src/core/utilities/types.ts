@@ -44,7 +44,7 @@ interface IBook {
     title: string;
     ratings: IRatings;
     icons: IUrlIcon;
-    series_info: ISeriesInfo;
+    series_info?: ISeriesInfo;
 }
 
 export { BookInfo, IRatings, IUrlIcon, ISeriesInfo, IBook };
