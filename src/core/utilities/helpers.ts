@@ -73,4 +73,18 @@ function convertBookInfoToIBookInfo(bookInfo: BookInfo): IBook {
     return book
 }
 
-export { getBookInfoQuery, convertBookInfoToIBookInfo }
+function mwRatingAverage(
+    rating1: number,
+    rating2: number,
+    rating3: number,
+    rating4: number,
+    rating5: number,
+    count: number
+): number {
+    return (
+        (rating1 * 1 + rating2 * 2 + rating3 * 3 + rating4 * 3 + rating5 * 5) /
+        count
+    );
+}
+
+export { getBookInfoQuery, convertBookInfoToIBookInfo, mwRatingAverage }
