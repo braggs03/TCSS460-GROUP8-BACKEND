@@ -367,7 +367,7 @@ bookRouter.get(
  * @apiUse SQL_ERR
  */
 bookRouter.get(
-    '/authors/:author',
+    '/authors/:author?',
     checkToken,
     async (request: Request, response: Response) => {
         const authorName = request.params.author;
