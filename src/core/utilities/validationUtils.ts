@@ -96,7 +96,9 @@ function validatePagination(request: Request) {
 function validateTitle(title: string): boolean {
     return title.trim().length > 0;
 }
-
+function mwRatingAverage(rating1:number, rating2:number, rating3:number, rating4:number, rating5:number, count: number): number {
+    return ((rating1 * 1) + (rating2 * 2)+ (rating3 * 3)+ (rating4 * 3)+ (rating5 * 5))/count;
+}
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
@@ -105,7 +107,8 @@ const validationFunctions = {
     validateYear,
     validatePagination,
     validateTitle,
-    validatePostYear
+    validatePostYear,
+    mwRatingAverage
 };
 
 export { validationFunctions };
