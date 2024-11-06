@@ -276,7 +276,6 @@ bookRouter.get(
  *
  * @apiUse IBook
  *
- *
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -357,9 +356,9 @@ bookRouter.get(
  * @apiName GetBookByAuthor
  * @apiGroup Book
  *
- * @apiSuccess {string} author Author's full name
+ * @apiSuccess {string} author The Author's full name
  *
- * @apiParam {string} author name of author to look up
+ * @apiParam {string} author The name of the author to search for.
  *
  * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
  * @apiError (404: Author not found) {string} message Author was not found.
@@ -464,9 +463,7 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
 
 /**
  * @api {put} /book Request to change a book by rating
- *
  * @apiDescription Request to change a book's rating (by adding/changing stars).
- *
  * @apiName PutBook
  * @apiGroup Book
  *
@@ -477,7 +474,7 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
  * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
  * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
  *
- * @apiSuccess {String} success the rating was successfully updated
+ * @apiSuccess {String} success The rating was successfully updated
  *
  * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
  * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
