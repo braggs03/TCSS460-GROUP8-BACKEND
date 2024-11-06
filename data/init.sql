@@ -85,14 +85,18 @@ CREATE TABLE
         author_id INT NOT NULL,
         series_id INT,
         series_position INT,
-        FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13)
+        CONSTRAINT FK_isbn
+            FOREIGN KEY (book_isbn) REFERENCES BOOKS (isbn13)
             ON DELETE CASCADE
             ON UPDATE CASCADE, 
-        FOREIGN KEY (author_id) REFERENCES AUTHORS (id) 
+        CONSTRAINT FK_aid
+            FOREIGN KEY (author_id) REFERENCES AUTHORS (id) 
             ON DELETE CASCADE
             ON UPDATE CASCADE,
-        FOREIGN KEY (series_id) REFERENCES SERIES (id) 
+        CONSTRAINT FK_sid
+            FOREIGN KEY (series_id) REFERENCES SERIES (id) 
             ON DELETE SET NULL
+            ON UPDATE CASCADE
     );
 
 /* Insert data from RAW_BOOKS into BOOKS */
@@ -140,12 +144,12 @@ SELECT
 FROM
     (
         SELECT
-            TRIM("match" [1]) as "name",
+            TRIM("match" [1]) AS "name",
             COUNT(TRIM("match" [1]))
         FROM
             (
                 SELECT
-                    regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') as "match"
+                    regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') AS "match"
                 FROM
                     RAW_BOOKS
             )
@@ -161,9 +165,9 @@ FROM
 INSERT INTO
     BOOK_MAP
 SELECT
-    isbn13 as "book_isbn",
-    AUTHORS.id as "author_id",
-    SERIES.id as "series_id",
+    isbn13 AS "book_isbn",
+    AUTHORS.id AS "author_id",
+    SERIES.id AS "series_id",
     "positions"."series_pos"
 FROM
     AUTHORS
@@ -176,14 +180,14 @@ FROM
     LEFT JOIN (
         /* series_pos is a number after # */
         SELECT
-            isbn13 as "isbn13_series",
-            regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') as "series_name",
+            isbn13 AS "isbn13_series",
+            regexp_matches(title, '(?<=\(|([0-9]; ))[^,)#]+', 'g') AS "series_name",
             NULLIF(
                 (
                     regexp_matches(title, '(?<= #)[-0-9]+', 'g')::int[]
                 ) [1],
                 -1
-            ) as "series_pos"
+            ) AS "series_pos"
         FROM
             RAW_BOOKS
     ) AS "positions" ON isbn13 = "isbn13_series";

@@ -33,9 +33,18 @@ export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_D
  */
 
 /**
- * @apiDefine Pagination
+ * @apiDefine Pagination_Input
  * @apiBody {number} [limit=10] a minimum rating required for a book.
  * @apiBody {number} [offset=0] a maximum rating required for a book.
+ */
+
+/**
+ * @apiDefine Pagination_Output
+ * @apiSuccess (200: API Success) {Object} pagination Contains metadata on pagination.
+ * @apiSuccess (200: API Success) {number} pagination.totalRecords The total number of entries for the given query.
+ * @apiSuccess (200: API Success) {number} pagination.limit The current limit applied.
+ * @apiSuccess (200: API Success) {number} pagination.offset The applied offset for this query.
+ * @apiSuccess (200: API Success) {number} pagination.nextPage The new computed offset to recieve the next limit # of books. Computed as limit + offset.
  */
 
 // UNUSED 
