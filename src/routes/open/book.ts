@@ -38,28 +38,18 @@ function mwRatingAverage(
 
 /**
  * @apiDefine IBook
- * @apiSuccess (200: Success) {IBook[]} IBook the book object containing all information
- * @apiSuccess (200: Success) {number} IBook.isbn13 ISBN of the book.
- * @apiSuccess (200: Success) {string} IBook.authors A string of authors comma seperated.
- * @apiSuccess (200: Success) {number} IBook.publication_year Year the book was published.
- * @apiSuccess (200: Success) {string} IBook.title Title of the book.
- * @apiSuccess (200: Success) {Object} IBook.IRatings IRatings the rating object containing all rating information.
- * @apiSuccess (200: Success) {number} IBook.IRatings.average The average rating of the book.
- * @apiSuccess (200: Success) {number} IBook.IRatings.count The overall count of ratings.
- * @apiSuccess (200: Success) {number} IBook.IRatings.rating_1 The number of 1 star ratings.
- * @apiSuccess (200: Success) {number} IBook.IRatings.rating_2 The number of 2 star ratings.
- * @apiSuccess (200: Success) {number} IBook.IRatings.rating_3 The number of 3 star ratings.
- * @apiSuccess (200: Success) {number} IBook.IRatings.rating_4 The number of 4 star ratings.
- * @apiSuccess (200: Success) {number} IBook.IRatings.rating_5 The number of 5 star ratings.
- * @apiSuccess (200: Success) {number} IBook.IUrlIcon IUrlIcon the url image object containing all url image information.
- * @apiSuccess (200: Success) {number} IBook.IUrlIcon.large The larger image of the book.
- * @apiSuccess (200: Success) {number} IBook.IUrlIcon.small The smaller image of the book.
+ * @apiSuccess (200: API Success) {IBook[]} entries An array of IBook objects. View documentation for object fields.
  */
 
 /**
  * @apiDefine JWT
  * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
  * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
+ */
+
+/**
+ * @apiDefine SQL_ERR
+ * @apiError (500: Server Error) {string} message Please contact support.
  */
 
 /**
@@ -75,6 +65,7 @@ function mwRatingAverage(
  * @apiError (404: ISBN Not Found) {String} message Book not found.
  * @apiError (400: Bad ISBN) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get(
     '/isbn',
@@ -137,6 +128,7 @@ bookRouter.get(
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (404: Year not found) {string} message No books found for the given year range.
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get('/year', (request: Request, response: Response) => {
     const yearMin = parseInt(request.query.year_min as string) || 1600;
@@ -182,6 +174,7 @@ bookRouter.get('/year', (request: Request, response: Response) => {
  * @apiError (400: Missing Title) {String} message Title was not provided
  * @apiError (404: Title not found) {String} message Title was not found
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get('/title', (request, response) => {
     const titleQuery = request.query.title as string;
@@ -243,6 +236,7 @@ bookRouter.get('/title', (request, response) => {
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
  * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get(
     '/rating',
@@ -311,8 +305,11 @@ bookRouter.get(
  * @apiName GetSeriesNames
  * @apiGroup Book
  *
- * @apiSuccess {String[]} series_names an array of series names.
+ * @apiUse IBook
+ * 
+ * 
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get('/series', (request: Request, response: Response) => {
     const theQuery = `
@@ -348,6 +345,7 @@ bookRouter.get('/series', (request: Request, response: Response) => {
  *
  * @apiError (400: Missing Name) {String} message "name route parameter is missing."
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get(
     '/series/:name',
@@ -390,8 +388,8 @@ bookRouter.get(
  *
  * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
  * @apiError (404: Author not found) {string} message Author was not found.
- * @apiError (500: Server Error) {string} message Server error - contact support
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get(
     '/authors/:author',
