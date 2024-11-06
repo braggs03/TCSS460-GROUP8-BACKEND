@@ -488,6 +488,7 @@ bookRouter.delete('/', (request, response) => {
  * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
  * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
  * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
+ * 
  * @apiSuccess {String} success the rating was successfully updated
  *
  * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
