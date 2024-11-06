@@ -86,7 +86,7 @@ bookRouter.get(
                         message: 'Book not found.',
                     });
                 }
-                return response.status(200).send(result.rows[0]);
+                return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
             })
             .catch((error) => {
                 //log the error
@@ -172,28 +172,14 @@ bookRouter.get('/title', (request, response) => {
 
     pool.query(theQuery, [titleQuery])
         .then((result) => {
-            const books = result.rows.map((row) => ({
-                isbn13: row.book_isbn,
-                authors: row.authors,
-                publication: row.publication_year,
-                original_title: row.original_title,
-                title: row.title,
-                ratings: {
-                    average: row.rating_avg,
-                    count: row.rating_count,
-                    rating_1: row.rating_1_star,
-                    rating_2: row.rating_2_star,
-                    rating_3: row.rating_3_star,
-                    rating_4: row.rating_4_star,
-                    rating_5: row.rating_5_star,
-                },
-                icons: {
-                    large: row.image_url,
-                    small: row.image_small_url,
-                },
-            }));
-
-            response.send(books);
+            if (result.rows.length === 0) {
+                return response.status(404).send({
+                    message: 'No books found for the given title.',
+                });
+            }
+            return response
+                .status(200)
+                .send(result.rows.map(convertBookInfoToIBookInfo));
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
@@ -264,7 +250,12 @@ bookRouter.get(
 
         pool.query(query, values)
             .then((result) => {
-                response.send(result.rows);
+                if(result.rows.length === 0) {
+                    return response.status(404).send({
+                        message: 'No books found for the given rating range.',
+                    });
+                }
+                response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
             })
             .catch((error) => {
                 //log the error
@@ -343,7 +334,7 @@ bookRouter.get(
 
         pool.query(theQuery, values)
             .then((result) => {
-                response.send(result.rows);
+                response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
             })
             .catch((error) => {
                 console.error('DB Query error on GET all series');
@@ -409,7 +400,7 @@ bookRouter.get(
     await pool
         .query(theBookQuery, [authorIds])
         .then((result) => {
-            response.status(200).send(result.rows);
+            response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
         })
         .catch((error) => {
             console.error('DB Query error on GET /:author', error);
@@ -431,11 +422,11 @@ bookRouter.get(
 bookRouter.get('/', (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
-    const theQuery = getBookInfoQuery();
+    const theQuery = getBookInfoQuery() + ' ORDER BY title LIMIT $1 OFFSET $2';
     const values = [request.query.limit, request.query.offset];
     pool.query(theQuery, values)
         .then((result) => {
-            response.send(result.rows);
+            response.send(result.rows.map(convertBookInfoToIBookInfo));
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
