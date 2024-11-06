@@ -37,22 +37,6 @@ function mwRatingAverage(
 }
 
 /**
- * @apiDefine IBook
- * @apiSuccess (200: API Success) {IBook[]} entries An array of IBook objects. View documentation for object fields.
- */
-
-/**
- * @apiDefine JWT
- * @apiError (401: Authorization Token is not supplied) {string} message No JWT provided, please sign in.
- * @apiError (403: Invalid JWT) {string} message Provided JWT is invalid. Please sign-in again.
- */
-
-/**
- * @apiDefine SQL_ERR
- * @apiError (500: Server Error) {string} message Please contact support.
- */
-
-/**
  * @api {get} /book/isbn Request to get a book by ISBN.
  * @apiName GetBookByISBN
  * @apiGroup Book
@@ -228,8 +212,7 @@ bookRouter.get('/title', (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book.
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- * @apiBody {number} [limit=10] a minimum rating required for a book.
- * @apiBody {number} [offset=0] a maximum rating required for a book.
+ * @apiUse Pagination
  *
  * @apiUse IBook
  *
@@ -241,7 +224,6 @@ bookRouter.get('/title', (request, response) => {
 bookRouter.get(
     '/rating',
     (request: Request, response: Response, next: NextFunction) => {
-        validationFunctions.validatePagination(request);
         if (
             request.query.rating_min === undefined &&
             request.query.rating_max === undefined
@@ -250,14 +232,8 @@ bookRouter.get(
                 message: 'Missing maximum and minimum rating.',
             });
         } else {
-            const ratingMin: number =
-                request.query.rating_min !== undefined
-                    ? +request.query.rating_min
-                    : RATING_MIN_DEFAULT;
-            const ratingMax: number =
-                request.query.rating_max !== undefined
-                    ? +request.query.rating_max
-                    : RATING_MAX_DEFAULT;
+            const ratingMin: number = +request.query.rating_min;
+            const ratingMax: number = +request.query.rating_max;
             if (
                 validationFunctions.isNumberProvided(ratingMin) &&
                 validationFunctions.isNumberProvided(ratingMax) &&
@@ -274,6 +250,7 @@ bookRouter.get(
         }
     },
     (request: Request, response: Response) => {
+        validationFunctions.validatePagination(request);
         const query =
             getBookInfoQuery('rating_avg BETWEEN $1 AND $2') +
             ' ORDER BY rating_avg DESC LIMIT $3 OFFSET $4';
@@ -427,73 +404,35 @@ bookRouter.get(
         if (response.headersSent) return;
 
         const theBookQuery =
-            selectBookInfo + ' WHERE author_id = ANY($1::integer[]);';
+        selectBookInfo + ' WHERE author_id = ANY($1::integer[]);';
 
-        await pool
-            .query(theBookQuery, [authorIds])
-            .then((result) => {
-                response.status(200).send(result.rows);
-            })
-            .catch((error) => {
-                console.error('DB Query error on GET /:author', error);
-                response.status(500).send({
-                    message: 'Server error - contact support',
-                });
+    await pool
+        .query(theBookQuery, [authorIds])
+        .then((result) => {
+            response.status(200).send(result.rows);
+        })
+        .catch((error) => {
+            console.error('DB Query error on GET /:author', error);
+            response.status(500).send({
+                message: 'Server error - contact support',
             });
-    }
-);
-
-/**
- * @api {get} /book Request to get book(s).
- * @apiName GetBookByAttributes
- * @apiGroup Book
- *
- * @apiBody {String} [isbn] a book ISBN.
- * @apiBody {String} [title] a book title.
- * @apiBody {String} [author] a book author.
- * @apiBody {String} [rating_min=0] a book rating.
- * @apiBody {String} [rating_max=5] a book rating.
- * @apiBody {String} [year_min=1600] a book year.
- * @apiBody {String} [year_max=3000] a book year.
- *
- *
- * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
- * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
- * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
- * @apiError (400: Title Parameter Invalid) {String} message "Title parameter is invalid. A title should be a non-empty string."
- * @apiError (400: Author Parameter Invalid) {String} message "Author parameter is invalid. An author should be a non-empty string."
- * @apiError (400: Rating Parameter Invalid) {String} message "Rating parameter is invalid. A rating should be a number between 0 and 5. Additionally, the minimum rating should be less than or equal to the maximum rating."
- * @apiError (400: Year Parameter Invalid) {String} message "Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year."
- * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
- *
- */
+        });
+});
 
 /**
  * @api {get} /book Request to get all book(s).
  * @apiName GetAllBooks
  * @apiGroup Book
- * @apiQuery {number} [limit=10] limit a limit value.
- * @apiQuery {number} [offset=0] offset a offset value.
+ * @apiUse Pagination
  *
- * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
- * @apiError (404: User Not Found) {String} message "User not found"
- * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
- * @apiError (500: SQL Error) {String} message Server error - contact support
+ * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.get('/', (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
-    const limit: number = request.query.limit
-        ? +request.query.limit
-        : LIMIT_DEFAULT;
-    const offset: number = request.query.offset
-        ? +request.query.offset
-        : OFFSET_DEFAULT;
-
     const theQuery = getBookInfoQuery();
-
-    const values = [limit, offset];
-
+    const values = [request.query.limit, request.query.offset];
     pool.query(theQuery, values)
         .then((result) => {
             response.send(result.rows);
@@ -503,8 +442,8 @@ bookRouter.get('/', (request: Request, response: Response) => {
             console.error(error);
             response.status(500).send({
                 message: 'Server error - contact support',
-            });
         });
+    });
 });
 
 /**
@@ -522,16 +461,14 @@ bookRouter.get('/', (request: Request, response: Response) => {
  *
  * @apiSuccess {Book} success an object showcasing the deleted book.
  *
- * @apiError (400: Malformed Authorization Header) {String} message "Malformed Authorization Header"
- * @apiError (404: User Not Found) {String} message "User not found"
- * @apiError (400: Invalid Credentials) {String} message "Credentials did not match"
  * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
  * @apiError (400: Title Parameter Invalid) {String} message "Title parameter is invalid. A title should be a non-empty string."
  * @apiError (400: Author Parameter Invalid) {String} message "Author parameter is invalid. An author should be a non-empty string."
  * @apiError (400: Rating Parameter Invalid) {String} message "Rating parameter is invalid. A rating should be a number between 0 and 5. Additionally, the minimum rating should be less than or equal to the maximum rating."
  * @apiError (400: Year Parameter Invalid) {String} message "Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year."
  * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
- *
+ * @apiUse JWT
+ * @apiUse SQL_ERR 
  */
 bookRouter.delete('/', (request, response) => {
     response.send('Hello, World!');
@@ -553,10 +490,9 @@ bookRouter.delete('/', (request, response) => {
  * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
  * @apiSuccess {String} success the rating was successfully updated
  *
- * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
- * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
  * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
+ * @apiUse JWT
  */
 bookRouter.put('/', async (request: Request, response: Response) => {
     if (!request.body.isbn) {
@@ -616,12 +552,12 @@ bookRouter.put('/', async (request: Request, response: Response) => {
  *
  * @apiSuccess (Success 201) {String} success the book was added
  *
- * @apiError (403: Invalid JWT) {String} message "Provided JWT is invalid. Please sign-in again."
- * @apiError (401: Authorization Token is not supplied) {String} message "No JWT provided, please sign in."
  * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
  * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 or 10 digit number.
  * @apiError (400: Empty Title) {String} message Title is empty and/or year is not in the range of 1600 - 3000
  * @apiError (404: Duplicate ISBN) {String} message Cannot have duplicate ISBNs! Try a different value.
+ * @apiUse JWT
+ * @apiUse SQL_ERR
  */
 bookRouter.post(
     '/',
