@@ -22,7 +22,7 @@ const bookRouter: Router = express.Router();
  *
  * @apiQuery {number} isbn a book ISBN to look up.
  *
- * @apiUse IBook
+ * @apiSuccess (200: API Success) {IBook} entry A IBook object. View documentation for object fields.
  *
  * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
  * @apiError (404: ISBN Not Found) {String} message Book not found.
@@ -46,7 +46,7 @@ bookRouter.get(
         ) {
             return response.status(400).send({
                 message:
-                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+                    'ISBN not valid. ISBN should be a positive 13 digit number.',
             });
         }
         return next();
@@ -64,7 +64,7 @@ bookRouter.get(
                         message: 'Book not found.',
                     });
                 }
-                return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+                return response.status(200).send({ entry: convertBookInfoToIBookInfo(result.rows[0]) });
             })
             .catch((error) => {
                 //log the error
@@ -115,7 +115,7 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
             }
             return response
                 .status(200)
-                .send(result.rows.map(convertBookInfoToIBookInfo));
+                .send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
         })
         .catch((error) => {
             console.error('DB Query error on GET by year');
@@ -128,15 +128,16 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
 
 /**
  * @api {get} /book/title Request a book by title.
+ * @apiDescription Used to request a list of book by title. Title does not have to be exact.
  * @apiName GetBookByTitle
  * @apiGroup Book
  *
- * @apiQuery {string} title the book title to search
+ * @apiQuery {string} title The book title to search for.
  *
  * @apiUse IBook
  *
- * @apiError (400: Missing Title) {String} message Title was not provided
- * @apiError (404: Title not found) {String} message Title was not found
+ * @apiError (400: Missing Title) {String} message Title was not provided.
+ * @apiError (404: Title not found) {String} message No books found for that given title.
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -144,7 +145,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
     const titleQuery = request.query.title as string;
     if (!validationFunctions.validateTitle(titleQuery)) {
         return response.status(400).send({
-            message: 'Title was not provided. Please review documentation.',
+            message: 'Title was not provided.',
         });
     }
     const theQuery = getBookInfoQuery("title LIKE '%'||$1||'%'");
@@ -153,12 +154,12 @@ bookRouter.get('/title', checkToken, (request, response) => {
         .then((result) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({
-                    message: 'No books found for the given title.',
+                    message: 'No books found for that given title.',
                 });
             }
             return response
                 .status(200)
-                .send(result.rows.map(convertBookInfoToIBookInfo));
+                .send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
@@ -177,10 +178,11 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book.
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- * @apiUse Pagination
+ * @apiUse Pagination_Input
  *
  * @apiUse IBook
- *
+ * @apiUse Pagination_Output
+ * 
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
  * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiUse JWT
@@ -214,17 +216,22 @@ bookRouter.get(
             }
         }
     },
-    (request: Request, response: Response) => {
+    async (request: Request, response: Response) => {
         validationFunctions.validatePagination(request);
         const query =
             getBookInfoQuery('rating_avg BETWEEN $1 AND $2') +
             ' ORDER BY rating_avg DESC LIMIT $3 OFFSET $4';
+
         const values = [
             request.query.rating_min,
             request.query.rating_max,
             request.query.limit,
             request.query.offset,
         ];
+
+        const count = await pool.query(
+            'SELECT count(*) AS exact_count FROM books;'
+        );
 
         pool.query(query, values)
             .then((result) => {
@@ -233,7 +240,15 @@ bookRouter.get(
                         message: 'No books found for the given rating range.',
                     });
                 }
-                response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
+                response.status(200).send({ 
+                    entries: result.rows.map(convertBookInfoToIBookInfo), 
+                    pagination: {
+                        totalRecords: count.rows[0].exact_count,
+                        limit: request.query.limit,
+                        offset: request.query.offset,
+                        nextPage: +request.query.limit + +request.query.offset,
+                    } 
+                });
             })
             .catch((error) => {
                 //log the error
@@ -312,7 +327,7 @@ bookRouter.get(
 
         pool.query(theQuery, values)
             .then((result) => {
-                response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
+                response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
             })
             .catch((error) => {
                 console.error('DB Query error on GET all series');
@@ -357,8 +372,8 @@ bookRouter.get(
             .query(theQuery, [authorName])
             .then((result) => {
                 if (result.rows.length === 0) {
-                    return response.status(400).send({
-                        message: 'Author not found.',
+                    return response.status(404).send({
+                        message: 'Author was not found.',
                     });
                 }
                 result.rows.map((row: { id: string }) => {
@@ -379,7 +394,7 @@ bookRouter.get(
     await pool
         .query(theBookQuery, [authorIds])
         .then((result) => {
-            response.status(200).send(result.rows.map(convertBookInfoToIBookInfo));
+            response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
         })
         .catch((error) => {
             console.error('DB Query error on GET /:author', error);
@@ -395,21 +410,35 @@ bookRouter.get(
  * @apiName GetAllBooks
  * @apiGroup Book
  * 
- * @apiUse Pagination
+ * @apiUse Pagination_Input
  *
  * @apiUse IBook
+ * @apiUse Pagination_Output
  * 
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/', checkToken, (request: Request, response: Response) => {
+bookRouter.get('/', checkToken, async (request: Request, response: Response) => {
     validationFunctions.validatePagination(request);
 
     const theQuery = getBookInfoQuery() + ' ORDER BY title LIMIT $1 OFFSET $2';
     const values = [request.query.limit, request.query.offset];
+
+    const count = await pool.query(
+        'SELECT count(*) AS exact_count FROM books;'
+    );
+
     pool.query(theQuery, values)
         .then((result) => {
-            response.send(result.rows.map(convertBookInfoToIBookInfo));
+            response.send({ 
+                entries: result.rows.map(convertBookInfoToIBookInfo), 
+                pagination: {
+                    totalRecords: count.rows[0].exact_count,
+                    limit: request.query.limit,
+                    offset: request.query.offset,
+                    nextPage: +request.query.limit + +request.query.offset,
+                } 
+            });
         })
         .catch((error) => {
             console.error('DB Query error on GET all');
