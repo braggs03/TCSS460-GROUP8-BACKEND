@@ -141,10 +141,16 @@ function mwRatingAverage(
         count
     );
 }
-
+function determineRatingChange(newRating: number): number {
+    if (newRating === 1) return 1; 
+    if (newRating === -1) return -1; 
+    return 0; 
+}
 export {
     getBookInfoQuery,
     getDeleteBookQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
+    determineRatingChange
 };
+

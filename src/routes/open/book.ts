@@ -9,6 +9,7 @@ import {
     getBookInfoQuery,
     convertBookInfoToIBookInfo,
     mwRatingAverage,
+    determineRatingChange,
     getDeleteBookQuery,
 } from '../../core/utilities/helpers';
 import { checkToken } from '../../core/middleware';
@@ -162,7 +163,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
                 .send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
         })
         .catch((error) => {
-            console.error('DB Query error on GET all');
+            console.error('DB Query error on GET title');
             console.error(error);
             response.status(500).send({
                 message: SQL_ERR,
@@ -463,60 +464,85 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
 
 /**
  * @api {put} /book Request to change a book by rating
- * @apiDescription Request to change a book's rating (by adding/changing stars).
+ *
+ * @apiDescription Request to change a book's rating (by adding/changing stars). If the user enters a 1 into the field, the rating is +1, if it's 0/undefined, the rating is not changed,
+ * if the rating is given -1, then we subtract -1 from that rating. A user cannot send no ratings to be updated...
+ *
  * @apiName PutBook
  * @apiGroup Book
  *
  * @apiBody {number} isbn the isbn of the book that needs to be changed
- * @apiBody {number} [rating_1] rating_1 the number of 1 stars of the book that needs to be added
- * @apiBody {number} [rating_2] rating_2 the number of 2 stars of the book that needs to be added
- * @apiBody {number} [rating_3] rating_3 the number of 3 stars of the book that needs to be added
- * @apiBody {number} [rating_4] rating_4 the number of 4 stars of the book that needs to be added
- * @apiBody {number} [rating_5] rating_5 the number of 5 stars of the book that needs to be added
- *
+ * @apiBody {number} [new_star1] 1 stars of the book that needs to be updated
+ * @apiBody {number} [new_star2] 2 stars of the book that needs to be updated
+ * @apiBody {number} [new_star3] 3 stars of the book that needs to be updated
+ * @apiBody {number} [new_star4] 4 stars of the book that needs to be updated
+ * @apiBody {number} [new_star5] 5 stars of the book that needs to be updated
+ * 
  * @apiSuccess {String} success The rating was successfully updated
  *
- * @apiError (404: Book Not Found) {String} message Book with given ISBN cannot be found. Update failed.
- * @apiError (400: Missing Parameters) {String} message You are missing parameters (either isbn or rating).
+ * @apiError (404: Book Not Found) {String} message ISBN does not exist - update failed.
+ * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined or 0. You must update at least one rating!
  * @apiUse JWT
+ * @apiUse SQL_ERR
  */
-bookRouter.put(
-    '/',
-    checkToken,
-    async (request: Request, response: Response) => {
-        if (!request.body.isbn) {
-            return response.status(400).send({
-                message: 'You are missing parameters (either isbn or rating).',
-            });
-        }
-
-        if (
-            request.body.rating_1 === undefined &&
-            request.body.rating_2 === undefined &&
-            request.body.rating_3 === undefined &&
-            request.body.rating_4 === undefined &&
-            request.body.rating_5 === undefined
-        ) {
-            return response.status(400).send({
-                message: 'You are missing parameters (either isbn or rating).',
-            });
-        }
-
-        const bookQuery = `SELECT rating_1_star, rating_2_star, rating_3_star, rating_4_star, rating_5_star, rating_count 
-                       FROM BOOKS 
-                       WHERE isbn13 = $1`;
-        const currentBook = await pool.query(bookQuery, [request.body.isbn]);
-        if (currentBook.rows.length === 0) {
-            return response.status(404).send({
-                message: 'Book with given ISBN cannot be found. Update failed.',
-            });
-        }
-
-        response.send({
-            success: 'The rating was successfully updated.',
+bookRouter.put('/', checkToken, (request: Request, response: Response) => {
+    if (!request.body.isbn) {
+        return response.status(400).send({
+            message: 'You are missing parameters (either isbn or rating). You MUST provide an ISBN and at least 1 rating to update.',
         });
     }
-);
+    if (
+        (request.body.new_star1 === undefined &&
+        request.body.new_star2 === undefined &&
+        request.body.new_star3 === undefined &&
+        request.body.new_star4 === undefined &&
+        request.body.new_star5 === undefined) ||
+        (request.body.new_star1 === 0 &&
+            request.body.new_star2 === 0 &&
+            request.body.new_star3 === 0 &&
+            request.body.new_star4 === 0 &&
+            request.body.new_star5 === 0)) {
+        return response.status(400).send({
+            message: 'You cannot leave all ratings undefined or 0. You must update at least one rating!',
+        });
+    }
+    const theQuery = getBookInfoQuery('book_isbn = $1');
+    pool.query(theQuery, [request.body.isbn])
+        .then((result) => {
+            if (result.rows.length === 0) {
+                return response.status(404).send({
+                    message: 'ISBN does not exist - update failed.'
+                });
+            }
+            const newStars = [request.body.new_star1, request.body.new_star2, request.body.new_star3, request.body.new_star4, request.body.new_star5];
+            const ratingChange = newStars.map((rating, index) => determineRatingChange(rating) + result.rows[0][`rating_${index+1}_star`]);
+            const ratingCount = ratingChange[0] + ratingChange[1] + ratingChange[2]+ ratingChange[3] + ratingChange[4];
+            const ratingAvg = mwRatingAverage(ratingChange[0] ,ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount);
+            const updateQuery = `
+            UPDATE BOOKS
+            SET 
+                rating_1_star = $1,
+                rating_2_star = $2,
+                rating_3_star = $3,
+                rating_4_star = $4,
+                rating_5_star = $5,
+                rating_count = $6,
+                rating_avg = $7
+            WHERE isbn13 = $8; `;
+            pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
+                .then(() => {
+                    return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+                });
+        })
+        .catch((error) => {
+            console.error(error);
+            return response.status(500).send({
+                message: SQL_ERR,
+            });
+        });
+    });
+
+
 
 /**
  * @api {post} /book Request to add a book
@@ -540,7 +566,7 @@ bookRouter.put(
  * @apiBody {string} image_url the url of the book that needs to be added
  * @apiBody {string} small_url the small image
  *
- * @apiSuccess (Success 201) {String} success the book was added
+ * @apiSuccess (Success 201) {String} success the book was created
  *
  * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
  * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 or 10 digit number.
@@ -558,7 +584,7 @@ bookRouter.post(
             request.body.publication_year === undefined ||
             request.body.title === undefined ||
             request.body.image_url === undefined ||
-            request.body.image_small_url === undefined
+            request.body.small_url === undefined
         ) {
             return response.status(400).send({
                 message:
@@ -623,7 +649,7 @@ bookRouter.post(
                 authorIds.push(insertResult.rows[0].id);
             }
         }
-        const seriesName = request.body.series || '';
+
         let seriesId: number = null;
         if (request.body.series && request.body.series.name) {
             const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
@@ -658,25 +684,11 @@ bookRouter.post(
                 rating4,
                 rating5,
                 request.body.image_url,
-                request.body.image_small_url,
+                request.body.small_url,
             ])
             .then((result) => {
                 response.status(201).send({
-                    isbn13: bookISBN,
-                    publication_year: request.body.publication_year,
-                    title: request.body.title,
-                    rating_avg: ratingAvg,
-                    rating_Count: ratingCount,
-                    rating_1: rating1,
-                    rating_2: rating2,
-                    rating_3: rating3,
-                    rating_4: rating4,
-                    rating_5: rating5,
-                    image_url: request.body.image_url,
-                    image_small_url: request.body.image_small_url,
-                    authors: authors,
-                    series_name: seriesName,
-                    series_pos: seriesId,
+                    entries: result.rows.map(convertBookInfoToIBookInfo)
                 });
             })
             .catch((error) => {
@@ -684,13 +696,10 @@ bookRouter.post(
                     error.detail != undefined &&
                     (error.detail as string).endsWith('already exists.')
                 ) {
-                    console.error('Name exists');
                     response.status(400).send({
-                        message: 'Name exists',
+                        message: 'Cannot have duplicate ISBNs! Try a different value.',
                     });
                 } else {
-                    //log the error
-                    console.error('DB Query error on POST');
                     console.error(error);
                     response.status(500).send({
                         message: SQL_ERR,
@@ -766,7 +775,7 @@ bookRouter.delete(
                     message: SQL_ERR,
                 });
             });
-    }
-);
+    })
+});
 
-export { bookRouter };
+export { bookRouter};
