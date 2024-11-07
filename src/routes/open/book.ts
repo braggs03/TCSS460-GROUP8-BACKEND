@@ -819,6 +819,97 @@ bookRouter.delete(
                     message: SQL_ERR,
                 });
             });
-    });
+    }
+);
+
+/**
+ * @api {delete} /book/series/ Request to delete all books in a series.
+ * @apiDescription Used to delete all books in a series. Series name must match exactly. If exact series name is unknown, consult /book/series route.
+ * @apiName DeleteBookBySeries
+ * @apiGroup Book
+ *
+ * @apiBody {String} IBook(s) from designated series that have been deleted from database.
+ *
+ * @apiSuccess {Book} success an object showcasing the deleted book(s).
+ *
+ * @apiError (400: Missing series_name) {String} message "series route parameter is missing."
+ * @apiError (404: Series not found) {String} message "No series found that meet the search criteria. Try again with a different search criteria."
+ * @apiError (404: Books not found for series) {String} message "No books found for the corresponding series."
+ * @apiUse JWT
+ * @apiUse SQL_ERR
+ */
+bookRouter.delete(
+    '/series',
+    checkToken,
+    (request: Request, response: Response, next: NextFunction) => {
+        const seriesName = request.query.series;
+        if (seriesName === undefined) {
+            return response.status(400).send({
+                message: "Missing 'series' query parameter.",
+            });
+        }
+        next();
+    },
+    async (request: Request, response: Response) => {
+        try {
+            const seriesName = request.query.series;
+            const seriesQuery = `
+                    SELECT id, series_name
+                    FROM BOOK_MAP JOIN SERIES 
+                        on BOOK_MAP.series_id = SERIES.id
+                    WHERE series_name = $1    
+                `;
+
+            const seriesResult = await pool.query(seriesQuery, [seriesName]);
+
+            if (seriesResult.rows.length === 0) {
+                return response.status(404).json({
+                    message: `Series '${seriesName}' not found`,
+                });
+            }
+
+            const seriesId = seriesResult.rows[0].id;
+
+            const idQuery = `
+                    SELECT book_isbn
+                    FROM BOOK_MAP 
+                    WHERE series_id = $1
+                `;
+
+            const isbnResult = await pool.query(idQuery, [seriesId]);
+
+            // if (isbnResult.rows.length === 0) {
+            //     return response.status(404).send({
+            //         message: 'No books found in this series.',
+            //     });
+            // }
+
+            const deletedBooks = [];
+
+            const deleteQuery = getDeleteBookQuery('isbn13 = $1');
+
+            for (const row of isbnResult.rows) {
+                const result = await pool.query(deleteQuery, [row.book_isbn]);
+                if (result.rows.length > 0) {
+                    deletedBooks.push(...result.rows);
+                }
+            }
+
+            // if (deletedBooks.length === 0) {
+            //     return response.status(404).send({
+            //         message:
+            //             'No books found that meet the search criteria.' 
+            //     });
+            // }
+
+            response.status(200).send(deletedBooks.map(convertBookInfoToIBookInfo));
+        } catch (error) {
+            console.error('DB Query error on DELETE /series', error);
+            response.status(500).send({
+                message: SQL_ERR,
+            });
+        }
+    }
+);
 
 export { bookRouter };
