@@ -187,6 +187,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
  * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
+ * @apiError (404: No books found) {String} message 'No books found for the given rating range.'
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -199,7 +200,8 @@ bookRouter.get(
             request.query.rating_max === undefined
         ) {
             response.status(400).send({
-                message: 'Missing maximum and minimum rating.',
+                message:
+                    'Missing max and min rating, atleast one of which should be supplied.',
             });
         } else {
             const ratingMin: number =
@@ -220,7 +222,8 @@ bookRouter.get(
                 next();
             } else {
                 return response.status(400).send({
-                    message: 'Bad maximum and/or minimum rating.',
+                    message:
+                        'Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max.',
                 });
             }
         }
@@ -301,7 +304,7 @@ bookRouter.get(
                 console.error('DB Query error on GET all series');
                 console.error(error);
                 response.status(500).send({
-                    message: 'SQL Error. Call 911.',
+                    message: SQL_ERR,
                 });
             });
     }
@@ -364,7 +367,7 @@ bookRouter.get(
  *
  * @apiParam {string} author The name of the author to search for.
  *
- * @apiError (400: Missing Author) {string} message 'author' query parameter is missing.
+ * @apiError (400: Missing Author) {string} message Missing 'author' parameter.
  * @apiError (404: Author not found) {string} message Author was not found.
  * @apiUse JWT
  * @apiUse SQL_ERR
@@ -576,11 +579,9 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                 result.rows[0].book_isbn,
             ])
                 .then(() => {
-                    return response
-                        .status(200)
-                        .send({
-                            entry: convertBookInfoToIBookInfo(result.rows[0]),
-                        });
+                    return response.status(200).send({
+                        entry: convertBookInfoToIBookInfo(result.rows[0]),
+                    });
                 })
                 .catch((error) => {
                     return response.status(500).send({
@@ -615,7 +616,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiBody {number} [rating_4=0] rating_4 the number of 4 stars of the book that needs to be added
  * @apiBody {number} [rating_5=0] rating_5 the number of 5 stars of the book that needs to be added
  * @apiBody {string} image_url the url of the book that needs to be added
- * @apiBody {string} small_url the small image
+ * @apiBody {string} small_url the small image url that needs to be added
  *
  * @apiSuccess (Success 201) {String} success the book was created
  *
@@ -792,6 +793,7 @@ bookRouter.post(
  *
  * @apiSuccess {Book} success an object showcasing the deleted book.
  *
+ * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query parameter."
  * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
  * @apiError (404: Book not found) {String} message "No books found that meet the search criteria. Try again with a different search criteria."
  * @apiUse JWT
@@ -814,7 +816,7 @@ bookRouter.delete(
         ) {
             return response.status(400).send({
                 message:
-                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+                    'ISBN parameter is invalid. An ISBN should be a positive 13 digit number.',
             });
         }
         next();
@@ -855,7 +857,7 @@ bookRouter.delete(
  *
  * @apiSuccess {Book} success an object showcasing the deleted book(s).
  *
- * @apiError (400: Missing series_name) {String} message "series route parameter is missing."
+ * @apiError (400: Missing series_name) {String} message "Missing 'series' query parameter."
  * @apiError (404: Series not found) {String} message "No series found that meet the search criteria. Try again with a different search criteria."
  * @apiError (404: Books not found for series) {String} message "No books found for the corresponding series."
  * @apiUse JWT
@@ -887,7 +889,7 @@ bookRouter.delete(
 
             if (seriesResult.rows.length === 0) {
                 return response.status(404).json({
-                    message: `Series '${seriesName}' not found`,
+                    message: `No series found that meet the search criteria. Try again with a different search criteria.`,
                 });
             }
 
@@ -901,12 +903,6 @@ bookRouter.delete(
 
             const isbnResult = await pool.query(idQuery, [seriesId]);
 
-            // if (isbnResult.rows.length === 0) {
-            //     return response.status(404).send({
-            //         message: 'No books found in this series.',
-            //     });
-            // }
-
             const deletedBooks = [];
 
             const deleteQuery = getDeleteBookQuery('isbn13 = $1');
@@ -918,18 +914,9 @@ bookRouter.delete(
                 }
             }
 
-            // if (deletedBooks.length === 0) {
-            //     return response.status(404).send({
-            //         message:
-            //             'No books found that meet the search criteria.'
-            //     });
-            // }
-
             response
                 .status(200)
-                .send({
-                    entries: deletedBooks.map(convertBookInfoToIBookInfo),
-                });
+                .send(deletedBooks.map(convertBookInfoToIBookInfo));
         } catch (error) {
             console.error('DB Query error on DELETE /series', error);
             response.status(500).send({
