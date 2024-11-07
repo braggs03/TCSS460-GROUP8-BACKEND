@@ -99,7 +99,7 @@ const emailMiddlewareCheck = (
  * @apiBody {String} firstname a users first name
  * @apiBody {String} lastname a users last name
  * @apiBody {String} email a users email *unique
- * @apiBody {String} password a users password
+ * @apiBody {String} password a users password. Password must be 15 characters in length, have a special character, and have digits such that they add up to 20.
  * @apiBody {String} username a username *unique
  * @apiBody {String} role a role for this user [1-5]
  * @apiBody {String} phone a phone number for this user
