@@ -67,7 +67,9 @@ bookRouter.get(
                         message: 'Book not found.',
                     });
                 }
-                return response.status(200).send({ entry: convertBookInfoToIBookInfo(result.rows[0]) });
+                return response.status(200).send({
+                    entry: convertBookInfoToIBookInfo(result.rows[0]),
+                });
             })
             .catch((error) => {
                 //log the error
@@ -339,7 +341,9 @@ bookRouter.get(
 
         pool.query(theQuery, values)
             .then((result) => {
-                response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
+                response.status(200).send({
+                    entries: result.rows.map(convertBookInfoToIBookInfo),
+                });
             })
             .catch((error) => {
                 console.error('DB Query error on GET all series');
@@ -407,7 +411,9 @@ bookRouter.get(
     await pool
         .query(theBookQuery, [authorIds])
         .then((result) => {
-            response.status(200).send({ entries: result.rows.map(convertBookInfoToIBookInfo) });
+                response.status(200).send({
+                    entries: result.rows.map(convertBookInfoToIBookInfo),
+                });
         })
         .catch((error) => {
             console.error('DB Query error on GET /:author', error);
@@ -415,7 +421,8 @@ bookRouter.get(
                 message: SQL_ERR,
             });
         });
-    });
+    }
+);
 
 /**
  * @api {get} /book Request to get all book(s).
@@ -514,10 +521,32 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                     message: 'ISBN does not exist - update failed.'
                 });
             }
-            const newStars = [request.body.new_star1, request.body.new_star2, request.body.new_star3, request.body.new_star4, request.body.new_star5];
-            const ratingChange = newStars.map((rating, index) => determineRatingChange(rating) + result.rows[0][`rating_${index+1}_star`]);
-            const ratingCount = ratingChange[0] + ratingChange[1] + ratingChange[2]+ ratingChange[3] + ratingChange[4];
-            const ratingAvg = mwRatingAverage(ratingChange[0] ,ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount);
+            const newStars = [
+                request.body.new_star1,
+                request.body.new_star2,
+                request.body.new_star3,
+                request.body.new_star4,
+                request.body.new_star5,
+            ];
+            const ratingChange = newStars.map(
+                (rating, index) =>
+                    determineRatingChange(rating) +
+                    result.rows[0][`rating_${index + 1}_star`]
+            );
+            const ratingCount =
+                ratingChange[0] +
+                ratingChange[1] +
+                ratingChange[2] +
+                ratingChange[3] +
+                ratingChange[4];
+            const ratingAvg = mwRatingAverage(
+                ratingChange[0],
+                ratingChange[1],
+                ratingChange[2],
+                ratingChange[3],
+                ratingChange[4],
+                ratingCount
+            );
             const updateQuery = `
             UPDATE BOOKS
             SET 
@@ -529,9 +558,19 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                 rating_count = $6,
                 rating_avg = $7
             WHERE isbn13 = $8; `;
-            pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
-                .then(() => {
-                    return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+            pool.query(updateQuery, [
+                ratingChange[0],
+                ratingChange[1],
+                ratingChange[2],
+                ratingChange[3],
+                ratingChange[4],
+                ratingCount,
+                ratingAvg,
+                result.rows[0].book_isbn,
+            ]).then(() => {
+                return response
+                    .status(200)
+                    .send(convertBookInfoToIBookInfo(result.rows[0]));
                 });
         })
         .catch((error) => {
@@ -541,8 +580,6 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
             });
         });
     });
-
-
 
 /**
  * @api {post} /book Request to add a book
