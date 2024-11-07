@@ -26,8 +26,28 @@ export interface IUserRequest extends Request {
 
 // Add more/your own password validation here. The *rules* must be documented
 // and the client-side validation should match these rules.
-const isValidPassword = (password: string): boolean =>
-    isStringProvided(password) && password.length > 7;
+const isValidPassword = (password: string): boolean => {
+    if (password.length < 15) {
+        return false;
+    }
+    // eslint-disable-next-line no-useless-escape
+    const testSpecial = /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
+    let sum = 0;
+    let isNum = false;
+    let hasSpecialChar = false;
+    for (const char of password) {
+        if (
+            validationFunctions.isNumberProvided(parseInt(char)) &&
+            !isNaN(parseInt(char))
+        ) {
+            sum = parseInt(char) + sum;
+            isNum = true;
+        } else if (testSpecial.test(char)) {
+            hasSpecialChar = true;
+        }
+    }
+    return isNum && hasSpecialChar && sum >= 20;
+};
 
 // Add more/your own phone number validation here. The *rules* must be documented
 // and the client-side validation should match these rules.
@@ -43,8 +63,13 @@ const isValidRole = (priority: string): boolean =>
 
 // Add more/your own email validation here. The *rules* must be documented
 // and the client-side validation should match these rules.
-const isValidEmail = (email: string): boolean =>
-    isStringProvided(email) && email.includes('@');
+const isValidEmail = (email: string) => {
+    return email
+        .toLowerCase()
+        .match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        );
+};
 
 // middleware functions may be defined elsewhere!
 const emailMiddlewareCheck = (
