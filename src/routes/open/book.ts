@@ -92,16 +92,15 @@ bookRouter.get(
  * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
  * @apiUse IBook
- *
- * @apiError (400: Missing Year) {string} message 'year_max' query parameter is missing or not a number.
+ * 
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (404: Year not found) {string} message No books found for the given year range.
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
 bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
-    const yearMin = parseInt(request.query.year_min as string) || 1600;
-    const yearMax = parseInt(request.query.year_max as string) || 3000;
+    const yearMin = parseInt(request.query.year_min as string);
+    const yearMax = parseInt(request.query.year_max as string);
     if (!validationFunctions.validateYear(yearMin, yearMax)) {
         return response.status(400).send({
             message:
@@ -560,7 +559,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
             WHERE isbn13 = $8; `;
             pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
                 .then(() => {
-                    return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+                    return response.status(200).send({entry: convertBookInfoToIBookInfo(result.rows[0])});
                 }).catch((error) => {
                     return response.status(500).send({
                         message: SQL_ERR,

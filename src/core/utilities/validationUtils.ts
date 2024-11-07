@@ -76,7 +76,7 @@ function validateYear(min: number, max: number): boolean {
     const isPositive = (min && max) > 0;
     return isMinValid && isMaxValid && isRangeValid && isPositive;
 }
-function validatePostYear(year: number) : boolean {
+function validatePostYear(year: number): boolean {
     const isPositive = year > 0;
     const isValidYear = year >= 1600;
     const isValidMax = year <= 3000;
@@ -97,25 +97,6 @@ function validateTitle(title: string): boolean {
     return title.trim().length > 0;
 }
 
-function passwordValidation(password: string): boolean {
-    if(password.length < 15) {
-        return false;
-    }
-    const testSpecial = /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
-    let sum = 0;
-    let isNum = false;
-    let hasSpecialChar = false;
-    for(const char of password) {
-        if(isNumber(parseInt(char)) && !isNaN(parseInt(char))) {
-            sum = parseInt(char) + sum;
-            isNum = true;
-        } else if (testSpecial.test(char)) {
-            hasSpecialChar = true;
-        }
-    }
-    return (isNum && hasSpecialChar && sum >= 20);
-}
-
 const validationFunctions = {
     isStringProvided,
     isNumberProvided,
@@ -125,7 +106,6 @@ const validationFunctions = {
     validatePagination,
     validateTitle,
     validatePostYear,
-    passwordValidation
 };
 
 export { validationFunctions };
