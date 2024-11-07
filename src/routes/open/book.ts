@@ -853,7 +853,7 @@ bookRouter.delete(
  * @apiName DeleteBookBySeries
  * @apiGroup Book
  *
- * @apiBody {String} IBook(s) from designated series that have been deleted from database.
+ * @apiBody {String} Entries: {IBook(s)} from designated series that have been deleted from database.
  *
  * @apiSuccess {Book} success an object showcasing the deleted book(s).
  *
@@ -914,9 +914,8 @@ bookRouter.delete(
                 }
             }
 
-            response
-                .status(200)
-                .send(deletedBooks.map(convertBookInfoToIBookInfo));
+            response.status(200).send({ entries: deletedBooks.map(convertBookInfoToIBookInfo) });
+
         } catch (error) {
             console.error('DB Query error on DELETE /series', error);
             response.status(500).send({
