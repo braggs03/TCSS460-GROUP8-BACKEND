@@ -46,7 +46,11 @@ const isValidPassword = (password: string): boolean => {
             hasSpecialChar = true;
         }
     }
+<<<<<<< HEAD
     return isNum && hasSpecialChar && sum === 20;
+=======
+    return isNum && hasSpecialChar && sum >= 20;
+>>>>>>> 821910ad737b1aeee8da8736c99f9e34d8b143f0
 };
 
 // Add more/your own phone number validation here. The *rules* must be documented
@@ -99,7 +103,7 @@ const emailMiddlewareCheck = (
  * @apiBody {String} firstname a users first name
  * @apiBody {String} lastname a users last name
  * @apiBody {String} email a users email *unique
- * @apiBody {String} password a users password
+ * @apiBody {String} password a users password. Password must be 15 characters in length, have a special character, and have digits such that they add up to 20.
  * @apiBody {String} username a username *unique
  * @apiBody {String} role a role for this user [1-5]
  * @apiBody {String} phone a phone number for this user
@@ -141,7 +145,7 @@ registerRouter.post(
         } else {
             response.status(400).send({
                 message:
-                    'Invalid or missing phone number  - please refer to documentation',
+                    'Invalid or missing phone number - please refer to documentation',
             });
             return;
         }
@@ -152,7 +156,7 @@ registerRouter.post(
         } else {
             response.status(400).send({
                 message:
-                    'Invalid or missing password  - please refer to documentation',
+                    'Invalid or missing password - please refer to documentation',
             });
         }
     },
@@ -162,7 +166,7 @@ registerRouter.post(
         } else {
             response.status(400).send({
                 message:
-                    'Invalid or missing role  - please refer to documentation',
+                    'Invalid or missing role - please refer to documentation',
             });
         }
     },
