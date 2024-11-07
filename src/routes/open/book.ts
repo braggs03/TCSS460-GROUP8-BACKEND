@@ -616,7 +616,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiBody {number} [rating_4=0] rating_4 the number of 4 stars of the book that needs to be added
  * @apiBody {number} [rating_5=0] rating_5 the number of 5 stars of the book that needs to be added
  * @apiBody {string} image_url the url of the book that needs to be added
- * @apiBody {string} small_url the small image
+ * @apiBody {string} small_url the small image url that needs to be added
  *
  * @apiSuccess (Success 201) {String} success the book was created
  *
