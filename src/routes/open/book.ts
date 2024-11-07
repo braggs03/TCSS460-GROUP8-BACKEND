@@ -598,7 +598,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiSuccess (Success 201) {String} success the book was created
  *
  * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
- * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 or 10 digit number.
+ * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
  * @apiError (400: Empty Title) {String} message Title is empty and/or year is not in the range of 1600 - 3000
  * @apiError (404: Duplicate ISBN) {String} message Cannot have duplicate ISBNs! Try a different value.
  * @apiUse JWT
@@ -629,7 +629,7 @@ bookRouter.post(
         ) {
             return response.status(400).send({
                 message:
-                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+                    'ISBN not valid. ISBN should be a positive 13 digit number.',
             });
         }
         if (
