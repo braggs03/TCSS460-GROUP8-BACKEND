@@ -43,10 +43,11 @@ function getBookInfoQuery(WHERE: string = '1 = 1'): string {
     `;
 }
 
-function getDeleteBookQuery(WHERE: string): string {
+function getDeleteBookQuery(WHERE: string, JOIN?: string) {
     return `
     WITH deleted_book AS (
         DELETE FROM BOOKS
+        ${JOIN}
         WHERE ${WHERE}
         RETURNING
             isbn13,
