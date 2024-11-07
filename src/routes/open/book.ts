@@ -92,7 +92,7 @@ bookRouter.get(
  * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
  * @apiUse IBook
- * 
+ *
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
  * @apiError (404: Year not found) {string} message No books found for the given year range.
  * @apiUse JWT
@@ -184,7 +184,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiUse IBook
  * @apiUse Pagination_Output
- * 
+ *
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
  * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
  * @apiUse JWT
@@ -249,14 +249,14 @@ bookRouter.get(
                         message: 'No books found for the given rating range.',
                     });
                 }
-                response.status(200).send({ 
-                    entries: result.rows.map(convertBookInfoToIBookInfo), 
+                response.status(200).send({
+                    entries: result.rows.map(convertBookInfoToIBookInfo),
                     pagination: {
                         totalRecords: count.rows[0].exact_count,
                         limit: request.query.limit,
                         offset: request.query.offset,
                         nextPage: +request.query.limit + +request.query.offset,
-                    } 
+                    },
                 });
             })
             .catch((error) => {
@@ -407,19 +407,19 @@ bookRouter.get(
 
         const theBookQuery = getBookInfoQuery('author_id = ANY($1::integer[])');
 
-    await pool
-        .query(theBookQuery, [authorIds])
-        .then((result) => {
+        await pool
+            .query(theBookQuery, [authorIds])
+            .then((result) => {
                 response.status(200).send({
                     entries: result.rows.map(convertBookInfoToIBookInfo),
                 });
-        })
-        .catch((error) => {
-            console.error('DB Query error on GET /:author', error);
-            response.status(500).send({
-                message: SQL_ERR,
+            })
+            .catch((error) => {
+                console.error('DB Query error on GET /:author', error);
+                response.status(500).send({
+                    message: SQL_ERR,
+                });
             });
-        });
     }
 );
 
@@ -428,45 +428,50 @@ bookRouter.get(
  * @apiDescription Retrieves all books in the database.
  * @apiName GetAllBooks
  * @apiGroup Book
- * 
+ *
  * @apiUse Pagination_Input
  *
  * @apiUse IBook
  * @apiUse Pagination_Output
- * 
+ *
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
-bookRouter.get('/', checkToken, async (request: Request, response: Response) => {
-    validationFunctions.validatePagination(request);
+bookRouter.get(
+    '/',
+    checkToken,
+    async (request: Request, response: Response) => {
+        validationFunctions.validatePagination(request);
 
-    const theQuery = getBookInfoQuery() + ' ORDER BY title LIMIT $1 OFFSET $2';
-    const values = [request.query.limit, request.query.offset];
+        const theQuery =
+            getBookInfoQuery() + ' ORDER BY title LIMIT $1 OFFSET $2';
+        const values = [request.query.limit, request.query.offset];
 
-    const count = await pool.query(
-        'SELECT count(*) AS exact_count FROM books;'
-    );
+        const count = await pool.query(
+            'SELECT count(*) AS exact_count FROM books;'
+        );
 
-    pool.query(theQuery, values)
-        .then((result) => {
-            response.send({ 
-                entries: result.rows.map(convertBookInfoToIBookInfo), 
-                pagination: {
-                    totalRecords: count.rows[0].exact_count,
-                    limit: request.query.limit,
-                    offset: request.query.offset,
-                    nextPage: +request.query.limit + +request.query.offset,
-                } 
+        pool.query(theQuery, values)
+            .then((result) => {
+                response.send({
+                    entries: result.rows.map(convertBookInfoToIBookInfo),
+                    pagination: {
+                        totalRecords: count.rows[0].exact_count,
+                        limit: request.query.limit,
+                        offset: request.query.offset,
+                        nextPage: +request.query.limit + +request.query.offset,
+                    },
+                });
+            })
+            .catch((error) => {
+                console.error('DB Query error on GET all');
+                console.error(error);
+                response.status(500).send({
+                    message: SQL_ERR,
+                });
             });
-        })
-        .catch((error) => {
-            console.error('DB Query error on GET all');
-            console.error(error);
-            response.status(500).send({
-                message: SQL_ERR,
-            });
-        });
-});
+    }
+);
 
 /**
  * @api {put} /book Request to change a book by rating
@@ -483,7 +488,7 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
  * @apiBody {number} [new_star3] 3 stars of the book that needs to be updated
  * @apiBody {number} [new_star4] 4 stars of the book that needs to be updated
  * @apiBody {number} [new_star5] 5 stars of the book that needs to be updated
- * 
+ *
  * @apiSuccess {String} success The rating was successfully updated
  *
  * @apiError (404: Book Not Found) {String} message ISBN does not exist - update failed.
@@ -494,22 +499,25 @@ bookRouter.get('/', checkToken, async (request: Request, response: Response) => 
 bookRouter.put('/', checkToken, (request: Request, response: Response) => {
     if (!request.body.isbn) {
         return response.status(400).send({
-            message: 'You are missing parameters (either isbn or rating). You MUST provide an ISBN and at least 1 rating to update.',
+            message:
+                'You are missing parameters (either isbn or rating). You MUST provide an ISBN and at least 1 rating to update.',
         });
     }
     if (
         (request.body.new_star1 === undefined &&
-        request.body.new_star2 === undefined &&
-        request.body.new_star3 === undefined &&
-        request.body.new_star4 === undefined &&
-        request.body.new_star5 === undefined) ||
+            request.body.new_star2 === undefined &&
+            request.body.new_star3 === undefined &&
+            request.body.new_star4 === undefined &&
+            request.body.new_star5 === undefined) ||
         (request.body.new_star1 === 0 &&
             request.body.new_star2 === 0 &&
             request.body.new_star3 === 0 &&
             request.body.new_star4 === 0 &&
-            request.body.new_star5 === 0)) {
+            request.body.new_star5 === 0)
+    ) {
         return response.status(400).send({
-            message: 'You cannot leave all ratings undefined or 0. You must update at least one rating!',
+            message:
+                'You cannot leave all ratings undefined or 0. You must update at least one rating!',
         });
     }
     const theQuery = getBookInfoQuery('book_isbn = $1');
@@ -517,7 +525,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
         .then((result) => {
             if (result.rows.length === 0) {
                 return response.status(404).send({
-                    message: 'ISBN does not exist - update failed.'
+                    message: 'ISBN does not exist - update failed.',
                 });
             }
             const newStars = [
@@ -557,10 +565,24 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                 rating_count = $6,
                 rating_avg = $7
             WHERE isbn13 = $8; `;
-            pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
+            pool.query(updateQuery, [
+                ratingChange[0],
+                ratingChange[1],
+                ratingChange[2],
+                ratingChange[3],
+                ratingChange[4],
+                ratingCount,
+                ratingAvg,
+                result.rows[0].book_isbn,
+            ])
                 .then(() => {
-                    return response.status(200).send({entry: convertBookInfoToIBookInfo(result.rows[0])});
-                }).catch((error) => {
+                    return response
+                        .status(200)
+                        .send({
+                            entry: convertBookInfoToIBookInfo(result.rows[0]),
+                        });
+                })
+                .catch((error) => {
                     return response.status(500).send({
                         message: SQL_ERR,
                     });
@@ -571,7 +593,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                 message: SQL_ERR,
             });
         });
-    });
+});
 
 /**
  * @api {post} /book Request to add a book
@@ -730,7 +752,7 @@ bookRouter.post(
                     rating_5: rating5,
                     image_url: request.body.image_url,
                     image_small_url: request.body.small_url,
-                    authors: authors.join(", "),
+                    authors: authors.join(', '),
                     series_name: seriesName,
                     series_pos: request.body.series_pos,
                 });
@@ -741,7 +763,8 @@ bookRouter.post(
                     (error.detail as string).endsWith('already exists.')
                 ) {
                     response.status(400).send({
-                        message: 'Cannot have duplicate ISBNs! Try a different value.',
+                        message:
+                            'Cannot have duplicate ISBNs! Try a different value.',
                     });
                 } else {
                     console.error(error);
@@ -752,7 +775,7 @@ bookRouter.post(
             });
         const seriesPos = request.body.series_pos;
         for (const idOfAuthor of authorIds) {
-             pool.query(
+            pool.query(
                 `INSERT INTO BOOK_MAP (book_isbn, author_id, series_id, series_position) VALUES ($1, $2, $3, $4)`,
                 [request.body.isbn13, idOfAuthor, seriesId, seriesPos]
             );
@@ -898,11 +921,15 @@ bookRouter.delete(
             // if (deletedBooks.length === 0) {
             //     return response.status(404).send({
             //         message:
-            //             'No books found that meet the search criteria.' 
+            //             'No books found that meet the search criteria.'
             //     });
             // }
 
-            response.status(200).send(deletedBooks.map(convertBookInfoToIBookInfo));
+            response
+                .status(200)
+                .send({
+                    entries: deletedBooks.map(convertBookInfoToIBookInfo),
+                });
         } catch (error) {
             console.error('DB Query error on DELETE /series', error);
             response.status(500).send({
