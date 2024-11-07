@@ -558,23 +558,16 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
                 rating_count = $6,
                 rating_avg = $7
             WHERE isbn13 = $8; `;
-            pool.query(updateQuery, [
-                ratingChange[0],
-                ratingChange[1],
-                ratingChange[2],
-                ratingChange[3],
-                ratingChange[4],
-                ratingCount,
-                ratingAvg,
-                result.rows[0].book_isbn,
-            ]).then(() => {
-                return response
-                    .status(200)
-                    .send(convertBookInfoToIBookInfo(result.rows[0]));
+            pool.query(updateQuery, [ratingChange[0],ratingChange[1],ratingChange[2], ratingChange[3],ratingChange[4], ratingCount, ratingAvg, result.rows[0].book_isbn])
+                .then(() => {
+                    return response.status(200).send(convertBookInfoToIBookInfo(result.rows[0]));
+                }).catch((error) => {
+                    return response.status(500).send({
+                        message: SQL_ERR,
+                    });
                 });
         })
         .catch((error) => {
-            console.error(error);
             return response.status(500).send({
                 message: SQL_ERR,
             });
@@ -688,10 +681,11 @@ bookRouter.post(
         }
 
         let seriesId: number = null;
-        if (request.body.series && request.body.series.name) {
+        const seriesName = request.body.series_name;
+        if (request.body.series_pos && request.body.series_name) {
             const seriesQuery = `SELECT id FROM SERIES WHERE series_name = $1`;
             const seriesResult = await pool.query(seriesQuery, [
-                request.body.series.name,
+                request.body.series_name,
             ]);
 
             if (seriesResult.rows.length > 0) {
@@ -699,7 +693,7 @@ bookRouter.post(
             } else {
                 const insertSeriesQuery = `INSERT INTO SERIES (series_name) VALUES ($1) RETURNING id`;
                 const insertSeriesResult = await pool.query(insertSeriesQuery, [
-                    request.body.series.name,
+                    request.body.series_name,
                 ]);
                 seriesId = insertSeriesResult.rows[0].id;
             }
@@ -725,7 +719,21 @@ bookRouter.post(
             ])
             .then((result) => {
                 response.status(201).send({
-                    entries: result.rows.map(convertBookInfoToIBookInfo)
+                    isbn13: bookISBN,
+                    publication_year: request.body.publication_year,
+                    title: request.body.title,
+                    rating_avg: ratingAvg,
+                    rating_count: ratingCount,
+                    rating_1: rating1,
+                    rating_2: rating2,
+                    rating_3: rating3,
+                    rating_4: rating4,
+                    rating_5: rating5,
+                    image_url: request.body.image_url,
+                    image_small_url: request.body.small_url,
+                    authors: authors.join(", "),
+                    series_name: seriesName,
+                    series_pos: request.body.series_pos,
                 });
             })
             .catch((error) => {
@@ -743,9 +751,9 @@ bookRouter.post(
                     });
                 }
             });
-        const seriesPos = request.body.series_pos || null;
+        const seriesPos = request.body.series_pos;
         for (const idOfAuthor of authorIds) {
-            await pool.query(
+             pool.query(
                 `INSERT INTO BOOK_MAP (book_isbn, author_id, series_id, series_position) VALUES ($1, $2, $3, $4)`,
                 [request.body.isbn13, idOfAuthor, seriesId, seriesPos]
             );
