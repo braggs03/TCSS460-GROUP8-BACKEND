@@ -46,7 +46,7 @@ const isValidPassword = (password: string): boolean => {
             hasSpecialChar = true;
         }
     }
-    return isNum && hasSpecialChar && sum >= 20;
+    return isNum && hasSpecialChar && sum === 20;
 };
 
 // Add more/your own phone number validation here. The *rules* must be documented
