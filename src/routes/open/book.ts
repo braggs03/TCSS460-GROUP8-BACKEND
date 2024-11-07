@@ -151,7 +151,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
         });
     }
     const theQuery = getBookInfoQuery("title LIKE '%'||$1||'%'");
-    
+
     pool.query(theQuery, [titleQuery])
         .then((result) => {
             if (result.rows.length === 0) {
@@ -301,7 +301,7 @@ bookRouter.get(
                 console.error('DB Query error on GET all series');
                 console.error(error);
                 response.status(500).send({
-                    message: 'SQL Error. Call 911.',
+                    message: SQL_ERR,
                 });
             });
     }
@@ -791,7 +791,7 @@ bookRouter.delete(
         ) {
             return response.status(400).send({
                 message:
-                    'ISBN not valid. ISBN should be a positive 13 or 10 digit number.',
+                    'ISBN not valid. ISBN should be a positive 13 digit number.',
             });
         }
         next();
