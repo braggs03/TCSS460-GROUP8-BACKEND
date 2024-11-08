@@ -331,6 +331,7 @@ bookRouter.get(
  * @apiUse IBook
  *
  * @apiError (400: Missing Name) {String} message "name route parameter is missing."
+ * @apiError (404: Series not Found) {String} message Series not found.
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -353,6 +354,11 @@ bookRouter.get(
 
         pool.query(theQuery, values)
             .then((result) => {
+                if (result.rows.length === 0) {
+                    return response.status(404).send({
+                        message: 'Series not found.',
+                    });
+                }
                 response.status(200).send({
                     entries: result.rows.map(convertBookInfoToIBookInfo),
                 });
