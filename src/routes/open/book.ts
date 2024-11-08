@@ -24,7 +24,7 @@ const bookRouter: Router = express.Router();
  *
  * @apiQuery {number} isbn a book ISBN to look up.
  *
- * @apiSuccess (200: API Success) {Object} entry an IBook object. View documentation for object fields.
+ * @apiUse IBook
  *
  * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
  * @apiError (404: ISBN Not Found) {String} message Book not found.
@@ -91,8 +91,6 @@ bookRouter.get(
  * @apiQuery {number} [year_min = 1600] a minimum year for the range
  * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
- * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested year range.
- *
  * @apiUse IBook
  *
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
@@ -138,8 +136,6 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
  *
  * @apiQuery {string} title The book title to search for.
  * 
- * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook matching to provided title.
- *
  * @apiUse IBook
  *
  * @apiError (400: Missing Title) {String} message Title was not provided.
@@ -184,10 +180,8 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book.
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- *
- * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested rating range.
- * 
  * @apiUse Pagination_Input
+ * 
  * @apiUse IBook
  * @apiUse Pagination_Output
  *
@@ -287,8 +281,6 @@ bookRouter.get(
  *
  * @apiSuccess (200: API Success) {String[]} An array of all series names.
  *
- * @apiUse IBook
- *
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -325,8 +317,6 @@ bookRouter.get(
  * @apiGroup Book
  *
  * @apiParam {string} [series] a series name. 
- * 
- * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested series.
  *
  * @apiUse IBook
  *
@@ -380,8 +370,8 @@ bookRouter.get(
  * @apiGroup Book
  *
  * @apiParam {string} author The name of the author to search for.
- * 
- * @apiSuccess (200: API Success) {Object[]} Entries - array of all books by requested author.
+ *
+ * @apiUse IBook
  *
  * @apiError (400: Missing Author) {string} message Missing 'author' parameter.
  * @apiError (404: Author not found) {string} message Author was not found.
@@ -448,12 +438,6 @@ bookRouter.get(
  * @apiName GetAllBooks
  * @apiGroup Book
  *
- * @apiSuccess (200: API Success) {Object[]} entries Array of {IBook} objects representing each book entry.
- * @apiSuccess (200: API Success) {Object} pagination Pagination information for the current request.
- * @apiSuccess (200: API Success) {Number} pagination.totalRecords The total count of books in the database.
- * @apiSuccess (200: API Success) {Number} pagination.limit The limit of entries per page, as specified in the request.
- * @apiSuccess (200: API Success) {Number} pagination.offset The offset for pagination, as specified in the request.
- * @apiSuccess (200: API Success) {Number} pagination.nextPage The offset for the next page (current offset + limit). * 
  * @apiUse Pagination_Input
  *
  * @apiUse IBook
