@@ -51,8 +51,13 @@ const isValidPassword = (password: string): boolean => {
 
 // Add more/your own phone number validation here. The *rules* must be documented
 // and the client-side validation should match these rules.
-const isValidPhone = (phone: string): boolean =>
-    isStringProvided(phone) && phone.length >= 10;
+const isValidPhone = (phone: string) => {
+    return phone
+        .toLowerCase()
+        .match(
+            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+        );
+};
 
 // Add more/your own role validation here. The *rules* must be documented
 // and the client-side validation should match these rules.
