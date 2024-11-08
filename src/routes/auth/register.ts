@@ -55,7 +55,7 @@ const isValidPhone = (phone: string) => {
     return phone
         .toLowerCase()
         .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
+            /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/
         );
 };
 
@@ -94,19 +94,16 @@ const emailMiddlewareCheck = (
 /**
  * @api {post} /register Request to register a user
  *
- * @apiDescription Password must be 15 characters in length, have a special character, 
- * and have digits such that they add up to 20.
- *
  * @apiName PostRegister
  * @apiGroup Auth
  *
  * @apiBody {String} firstname a users first name
  * @apiBody {String} lastname a users last name
- * @apiBody {String} email a users email *unique
- * @apiBody {String} password a users password. 
+ * @apiBody {String} email a users email *unique. Must be a valid email address.
+ * @apiBody {String} password a users password. Password must be 15 characters in length, have a special character, and have digits such that they add up to 20.
  * @apiBody {String} username a username *unique
  * @apiBody {String} role a role for this user [1-5]
- * @apiBody {String} phone a phone number for this user
+ * @apiBody {String} phone a phone number for this user. Must be a valid phone number.
  *
  * @apiSuccess (Success 201) {string} accessToken a newly created JWT
  * @apiSuccess (Success 201) {number} id unique user id
@@ -140,6 +137,7 @@ registerRouter.post(
     },
     (request: Request, response: Response, next: NextFunction) => {
         if (isValidPhone(request.body.phone)) {
+            request.body.phone = request.body.phone.replace(/[()\-\s]+/g, '')
             next();
             return;
         } else {
