@@ -24,7 +24,7 @@ const bookRouter: Router = express.Router();
  *
  * @apiQuery {number} isbn a book ISBN to look up.
  *
- * @apiSuccess (200: API Success) {IBook} entry A IBook object. View documentation for object fields.
+ * @apiSuccess (200: API Success) {Object} entry an IBook object. View documentation for object fields.
  *
  * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
  * @apiError (404: ISBN Not Found) {String} message Book not found.
@@ -91,6 +91,8 @@ bookRouter.get(
  * @apiQuery {number} [year_min = 1600] a minimum year for the range
  * @apiQuery {number} [year_max = 3000] a maximum year for the range
  *
+ * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested year range.
+ *
  * @apiUse IBook
  *
  * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
@@ -135,6 +137,8 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
  * @apiGroup Book
  *
  * @apiQuery {string} title The book title to search for.
+ * 
+ * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook matching to provided title.
  *
  * @apiUse IBook
  *
@@ -180,8 +184,10 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiBody {number} [rating_min=1] a minimum rating required for a book.
  * @apiBody {number} [rating_max=5] a maximum rating required for a book.
- * @apiUse Pagination_Input
  *
+ * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested rating range.
+ * 
+ * @apiUse Pagination_Input
  * @apiUse IBook
  * @apiUse Pagination_Output
  *
@@ -279,6 +285,8 @@ bookRouter.get(
  * @apiName GetSeriesNames
  * @apiGroup Book
  *
+ * @apiSuccess (200: API Success) {String[]} An array of all series names.
+ *
  * @apiUse IBook
  *
  * @apiUse JWT
@@ -316,7 +324,9 @@ bookRouter.get(
  * @apiName GetBooksInSeries
  * @apiGroup Book
  *
- * @apiParam {string} series a series name.
+ * @apiParam {string} [series] a series name. 
+ * 
+ * @apiSuccess (200: API Success) {Object[]} Entries - an object array of IBook from the requested series.
  *
  * @apiUse IBook
  *
@@ -363,9 +373,9 @@ bookRouter.get(
  * @apiName GetBookByAuthor
  * @apiGroup Book
  *
- * @apiSuccess {string} author The Author's full name
- *
  * @apiParam {string} author The name of the author to search for.
+ * 
+ * @apiSuccess (200: API Success) {Object[]} Entries - array of all books by requested author.
  *
  * @apiError (400: Missing Author) {string} message Missing 'author' parameter.
  * @apiError (404: Author not found) {string} message Author was not found.
@@ -432,6 +442,12 @@ bookRouter.get(
  * @apiName GetAllBooks
  * @apiGroup Book
  *
+ * @apiSuccess (200: API Success) {Object[]} entries Array of {IBook} objects representing each book entry.
+ * @apiSuccess (200: API Success) {Object} pagination Pagination information for the current request.
+ * @apiSuccess (200: API Success) {Number} pagination.totalRecords The total count of books in the database.
+ * @apiSuccess (200: API Success) {Number} pagination.limit The limit of entries per page, as specified in the request.
+ * @apiSuccess (200: API Success) {Number} pagination.offset The offset for pagination, as specified in the request.
+ * @apiSuccess (200: API Success) {Number} pagination.nextPage The offset for the next page (current offset + limit). * 
  * @apiUse Pagination_Input
  *
  * @apiUse IBook
@@ -791,7 +807,7 @@ bookRouter.post(
  *
  * @apiBody {String} [isbn] a book ISBN.
  *
- * @apiSuccess {Book} success an object showcasing the deleted book.
+ * @apiSuccess (200: API Success) {Object} [IBook] success an IBook showcasing the deleted book.
  *
  * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query parameter."
  * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
@@ -853,13 +869,15 @@ bookRouter.delete(
  * @apiName DeleteBookBySeries
  * @apiGroup Book
  *
- * @apiBody {String} Entries: {IBook(s)} from designated series that have been deleted from database.
+ * @apiBody {String} [series] Name of series to be deleted. Must be exact match.
  *
- * @apiSuccess {Book} success an object showcasing the deleted book(s).
+ * @apiSuccess (200: API Success) {Object[]} entries Array containing {IBook} entries representing the deleted book(s).
  *
  * @apiError (400: Missing series_name) {String} message "Missing 'series' query parameter."
  * @apiError (404: Series not found) {String} message "No series found that meet the search criteria. Try again with a different search criteria."
  * @apiError (404: Books not found for series) {String} message "No books found for the corresponding series."
+ * 
+ * @apiUse IBook
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
