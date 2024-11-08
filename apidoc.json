@@ -1,8 +1,8 @@
 {
-    "name": "TCSS 460 BE Phase 2",
+    "name": "TCSS 460 Group 8 Book Project",
     "version": "0.1.0",
-    "description": "TCSS 460 Second Node/Express Rest Web API, includes DB and Auth examples",
-    "title": "TCSS 460 Rest Web API",
+    "description": "A Web API developed by Group 8 for TCSS 460 that can retrieve, delete, and update books.",
+    "title": "TCSS 460 Book Web API",
     "url": "localhost:4000",
     "order": [
         "PostMessage",
