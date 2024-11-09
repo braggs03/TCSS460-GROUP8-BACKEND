@@ -7,6 +7,6 @@ import { bookRouter } from './book';
 const closedRoutes: Router = express.Router();
 
 closedRoutes.use('/jwt_test', checkToken, tokenTestRouter);
-closedRoutes.use('/book/', bookRouter)
+closedRoutes.use('/book/', bookRouter);
 
 export { closedRoutes };
