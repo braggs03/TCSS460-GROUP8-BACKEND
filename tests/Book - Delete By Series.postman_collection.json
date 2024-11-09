@@ -1,0 +1,376 @@
+{
+	"info": {
+		"_postman_id": "8e994270-3ef0-4f1d-970e-82e6fa055039",
+		"name": "Book - Delete By Series",
+		"description": "Delete by series meant to be used in order.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/39100411-8e994270-3ef0-4f1d-970e-82e6fa055039?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "delete by series no series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Missing 'series' query parameter.\")\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": "localhost:4000/book/series"
+			},
+			"response": []
+		},
+		{
+			"name": "delete by series invalid series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 404\", () => {\r",
+							"    pm.response.to.have.status(404);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\");\r",
+							"    pm.expect(response.message).to.include(`No series found that meet the search criteria. Try again with a different search criteria.`);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/series?series=Hairy Potter",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"series"
+					],
+					"query": [
+						{
+							"key": "series",
+							"value": "Hairy Potter"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Add dummy book 1 in Series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains required fields\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"isbn13\");\r",
+							"    pm.expect(jsonData).to.have.property(\"publication_year\");\r",
+							"    pm.expect(jsonData).to.have.property(\"title\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_avg\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_count\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_1\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_2\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_3\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_4\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_5\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_small_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"authors\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_name\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_pos\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 1999999999002,\r\n    \"publication_year\": 1978,\r\n    \"title\": \"DELETEMESOON2\",\r\n    \"rating_1\": 56,\r\n    \"rating_2\": 233,\r\n    \"rating_3\": 456,\r\n    \"rating_4\": 923,\r\n    \"rating_5\": 2450,\r\n    \"image_url\": \"http://example.com/image.jpg\",\r\n    \"small_url\": \"http://example.com/small_image.jpg\",\r\n    \"authors\": [\"DELETE\", \"LATER\"],\r\n    \"series_name\": \"DELETEMESERIES1\",\r\n    \"series_pos\": 1\r\n    \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "Add dummy book 2 in Series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains required fields\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"isbn13\");\r",
+							"    pm.expect(jsonData).to.have.property(\"publication_year\");\r",
+							"    pm.expect(jsonData).to.have.property(\"title\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_avg\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_count\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_1\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_2\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_3\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_4\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_5\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_small_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"authors\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_name\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_pos\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"const random13DigitNumber = Math.floor(Math.random() * 9e12) + 1e12;\r",
+							"pm.environment.set(\"randomISBN13\", random13DigitNumber.toString());\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 1999999999003,\r\n    \"publication_year\": 1978,\r\n    \"title\": \"DELETEMESOON3\",\r\n    \"rating_1\": 56,\r\n    \"rating_2\": 233,\r\n    \"rating_3\": 456,\r\n    \"rating_4\": 923,\r\n    \"rating_5\": 2450,\r\n    \"image_url\": \"http://example.com/image.jpg\",\r\n    \"small_url\": \"http://example.com/small_image.jpg\",\r\n    \"authors\": [\"DELETE\", \"LATER\"],\r\n    \"series_name\": \"DELETEMESERIES1\",\r\n    \"series_pos\": 2\r\n    \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "Add dummy book 3 in Series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains required fields\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"isbn13\");\r",
+							"    pm.expect(jsonData).to.have.property(\"publication_year\");\r",
+							"    pm.expect(jsonData).to.have.property(\"title\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_avg\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_count\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_1\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_2\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_3\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_4\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_5\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_small_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"authors\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_name\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_pos\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"const random13DigitNumber = Math.floor(Math.random() * 9e12) + 1e12;\r",
+							"pm.environment.set(\"randomISBN13\", random13DigitNumber.toString());\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 1999999999004,\r\n    \"publication_year\": 1978,\r\n    \"title\": \"DELETEMESOON4\",\r\n    \"rating_1\": 56,\r\n    \"rating_2\": 233,\r\n    \"rating_3\": 456,\r\n    \"rating_4\": 923,\r\n    \"rating_5\": 2450,\r\n    \"image_url\": \"http://example.com/image.jpg\",\r\n    \"small_url\": \"http://example.com/small_image.jpg\",\r\n    \"authors\": [\"DELETE\", \"LATER\"],\r\n    \"series_name\": \"DELETEMESERIES1\",\r\n    \"series_pos\": 3\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "delete by series success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty('entries'); \r",
+							"    pm.expect(response.entries).to.be.an('array'); \r",
+							"    const firstBook = response.entries[0];\r",
+							"    pm.expect(firstBook).to.have.ownProperty('authors');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('publication');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('title'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('ratings');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('average');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('count');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_1');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_2');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_3');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_4');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_5');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('icons');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('large');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('small');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/book/series?series=DELETEMESERIES1",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"series"
+					],
+					"query": [
+						{
+							"key": "series",
+							"value": "DELETEMESERIES1"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

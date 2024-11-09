@@ -1,0 +1,300 @@
+{
+	"info": {
+		"_postman_id": "c29c54ef-700c-44e7-a1ad-63c6a8da1f5b",
+		"name": "Book - Get By ISBN",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/39100411-c29c54ef-700c-44e7-a1ad-63c6a8da1f5b?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "Get book by isbn good param",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    const firstBook = response.entry;\r",
+							"    pm.expect(firstBook).to.have.ownProperty('isbn13'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('authors');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('publication');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_name');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_position');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('title'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('ratings');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('average');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('count');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_1');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_2');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_3');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_4');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_5');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('icons');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('large');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('small');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=9781878424440",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "9781878424440"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Get book by isbn good param - with series",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    const firstBook = response.entry;\r",
+							"    pm.expect(firstBook).to.have.ownProperty('isbn13'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('authors');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('publication');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_name');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_position');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('title'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('ratings');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('average');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('count');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_1');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_2');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_3');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_4');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_5');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('icons');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('large');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('small');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('series_info');\r",
+							"    pm.expect(firstBook.series_info).to.have.ownProperty('name');\r",
+							"    pm.expect(firstBook.series_info).to.have.ownProperty('position');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=9788107119474",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "9788107119474"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get book by isbn missing isbn",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response does include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Missing 'isbn' query parameter.\")\r",
+							"    pm.response.to.have.status(400);\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "",
+							"value": null,
+							"disabled": true
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get book by isbn bad isbn",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"ISBN not valid. ISBN should be a positive 13 digit number.\")\r",
+							"    pm.response.to.have.status(400);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=call911",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "call911"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get book by isbn isbn not found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Book not found.\")\r",
+							"    pm.response.to.have.status(404);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=9780060244061",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "9780060244061"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

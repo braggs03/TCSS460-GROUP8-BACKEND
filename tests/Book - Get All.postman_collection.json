@@ -1,0 +1,145 @@
+{
+	"info": {
+		"_postman_id": "c424d343-ad85-496c-9a65-7daa959e708e",
+		"name": "Book - Get All",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/38698877-c424d343-ad85-496c-9a65-7daa959e708e?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "get all success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty('entries'); \r",
+							"    pm.expect(response.entries).to.be.an('array'); \r",
+							"    const firstBook = response.entries[0];\r",
+							"    pm.expect(firstBook).to.have.ownProperty('isbn13'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('authors');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('publication');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_name');\r",
+							"//    pm.expect(firstBook).to.have.ownProperty('series_position');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('title'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('ratings');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('average');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('count');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_1');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_2');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_3');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_4');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_5');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('icons');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('large');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('small');\r",
+							"    pm.expect(response).to.have.ownProperty('pagination'); \r",
+							"    pm.expect(response.pagination).to.have.ownProperty('totalRecords'); \r",
+							"    pm.expect(response.pagination).to.have.ownProperty('limit'); \r",
+							"    pm.expect(response.pagination).to.have.ownProperty('offset'); \r",
+							"    pm.expect(response.pagination).to.have.ownProperty('nextPage'); \r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book?limit=20&offset=20",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "20"
+						},
+						{
+							"key": "offset",
+							"value": "20"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all - high offset",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", function () {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", function () {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.property('entries'); \r",
+							"    pm.expect(response.entries).to.be.an('array'); \r",
+							"    pm.expect(response.entries.length).to.equal(0);\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book?limit=99999999&offset=9999999999",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book"
+					],
+					"query": [
+						{
+							"key": "limit",
+							"value": "99999999"
+						},
+						{
+							"key": "offset",
+							"value": "9999999999"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

@@ -1,0 +1,226 @@
+{
+	"info": {
+		"_postman_id": "7ce32509-9c56-4986-a171-8816fa801741",
+		"name": "Book - Update a Book",
+		"schema": "https://schema.getpostman.com/json/collection/v2.0.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/38698877-7ce32509-9c56-4986-a171-8816fa801741?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "add a dummy book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains required fields\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"isbn13\");\r",
+							"    pm.expect(jsonData).to.have.property(\"publication_year\");\r",
+							"    pm.expect(jsonData).to.have.property(\"title\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_avg\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_count\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_1\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_2\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_3\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_4\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_5\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_small_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"authors\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_name\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_pos\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 9908765789012,\r\n    \"publication_year\": 1978,\r\n    \"title\": \"UW Tacoma: Adventures as a Student\",\r\n    \"rating_1\": 56,\r\n    \"rating_2\": 233,\r\n    \"rating_3\": 456,\r\n    \"rating_4\": 923,\r\n    \"rating_5\": 2450,\r\n    \"image_url\": \"http://example.com/image.jpg\",\r\n    \"small_url\": \"http://example.com/small_image.jpg\",\r\n    \"authors\": [\"The best\", \"dad\"],\r\n    \"series_name\": \"Volume 1\",\r\n    \"series_pos\": 1\r\n    \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "update success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response includes all required\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    const firstBook = response.entry;\r",
+							"    pm.expect(firstBook).to.have.ownProperty('isbn13'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('authors');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('publication');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('title'); \r",
+							"    pm.expect(firstBook).to.have.ownProperty('ratings');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('average');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('count');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_1');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_2');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_3');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_4');\r",
+							"    pm.expect(firstBook.ratings).to.have.ownProperty('rating_5');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('icons');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('large');\r",
+							"    pm.expect(firstBook.icons).to.have.ownProperty('small');\r",
+							"    pm.expect(firstBook).to.have.ownProperty('series_info');\r",
+							"    pm.expect(firstBook.series_info).to.have.ownProperty('name');\r",
+							"    pm.expect(firstBook.series_info).to.have.ownProperty('position');\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn\": \"9908765789012\", \r\n    \"new_star1\": -1,\r\n    \"new_star2\": -1, \r\n    \"new_star3\": -1,\r\n    \"new_star4\": 1,\r\n    \"new_star5\": 1               \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "update isbn not found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does NOT include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"ISBN does not exist - update failed.\")\r",
+							"    pm.response.to.have.status(404);\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"isbn\": \"0000000000002\",\r\n  \"new_star1\": 1\r\n\r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		},
+		{
+			"name": "update bad param",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does NOT include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"You cannot leave all ratings undefined or 0. You must update at least one rating!\")\r",
+							"    pm.response.to.have.status(400);\r",
+							"})\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": {
+						"token": "{{valid_jwt}}"
+					}
+				},
+				"method": "PUT",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"isbn\": \"97801431\"\r\n}\r\n\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": "localhost:4000/book"
+			},
+			"response": []
+		}
+	]
+}
