@@ -23,7 +23,7 @@ const updateCredetialsRouter: Router = express.Router();
  * @apiBody {string} oldPassword The current password of the user.
  * @apiBody {string} newPassword The password the user wishes to change to.
  *
- * @apiSuccess (200: Update Password Success) {string} Password Updated Successfully.
+ * @apiSuccess (200: Update Password Success) {string} message Password Updated Successfully.
  *
  * @apiError (400: Missing or Invalid Email) {string} message Invalid or missing email - please refer to documentation.
  * @apiError (400: Missing or Invalid Old Password) {string} message Invalid or missing old password - please refer to documentation.
@@ -121,7 +121,7 @@ updateCredetialsRouter.post(
         pool.query(theQuery, values)
             .then(() => {
                 response.status(200).send({
-                    message: 'Password Updated Successfully',
+                    message: 'Password Updated Successfully.',
                 });
             })
             .catch((error) => {
