@@ -1,0 +1,307 @@
+{
+	"info": {
+		"_postman_id": "91dabf96-c558-4ee5-b6ed-2712d6aad9ff",
+		"name": "Book - Delete a ISBN",
+		"description": "Delete book from database.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/38698877-91dabf96-c558-4ee5-b6ed-2712d6aad9ff?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "Add dummy book",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 201\", function () {\r",
+							"    pm.response.to.have.status(201);\r",
+							"});\r",
+							"\r",
+							"pm.test(\"Response contains required fields\", function () {\r",
+							"    const jsonData = pm.response.json();\r",
+							"    pm.expect(jsonData).to.have.property(\"isbn13\");\r",
+							"    pm.expect(jsonData).to.have.property(\"publication_year\");\r",
+							"    pm.expect(jsonData).to.have.property(\"title\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_avg\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_count\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_1\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_2\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_3\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_4\");\r",
+							"    pm.expect(jsonData).to.have.property(\"rating_5\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"image_small_url\");\r",
+							"    pm.expect(jsonData).to.have.property(\"authors\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_name\");\r",
+							"    pm.expect(jsonData).to.have.property(\"series_pos\");\r",
+							"});\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"\r",
+							"const random13DigitNumber = Math.floor(Math.random() * 9e12) + 1e12;\r",
+							"pm.environment.set(\"randomISBN13\", random13DigitNumber.toString());\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"isbn13\": 1999999999001,\r\n    \"publication_year\": 1978,\r\n    \"title\": \"DELETEMESOON\",\r\n    \"rating_1\": 56,\r\n    \"rating_2\": 233,\r\n    \"rating_3\": 456,\r\n    \"rating_4\": 923,\r\n    \"rating_5\": 2450,\r\n    \"image_url\": \"http://example.com/image.jpg\",\r\n    \"small_url\": \"http://example.com/small_image.jpg\",\r\n    \"authors\": [\"DELETE\", \"LATER\"],\r\n    \"series_name\": \"DELETEMESERIES\",\r\n    \"series_pos\": 1\r\n    \r\n}\r\n",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/book",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "request to delete - bad missing isbn",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does not include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Missing 'isbn' query parameter.\")\r",
+							"    pm.response.to.have.status(400);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "request to delete - bad invalid isbn",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does not include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"ISBN parameter is invalid. An ISBN should be a positive 13 digit number.\");\r",
+							"    pm.response.to.have.status(400);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=2",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "2"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "request to delete not found",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does not include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"No books found that meet the search criteria. Try again with a different search criteria.\")\r",
+							"    pm.response.to.have.status(404);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"title\": \"abcd;adfg\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=1122334455660",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "1122334455660"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "request to delete - success",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response does include specified elements\", () => {\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response[0]).to.have.ownProperty(\"title\")\r",
+							"    pm.expect(response[0].title).to.equal(\"DELETEMESOON\")\r",
+							"    pm.response.to.have.status(200);\r",
+							"})"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "localhost:4000/book/isbn?isbn=1999999999001",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"book",
+						"isbn"
+					],
+					"query": [
+						{
+							"key": "isbn",
+							"value": "1999999999001"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

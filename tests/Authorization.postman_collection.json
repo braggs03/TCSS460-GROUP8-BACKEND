@@ -1,0 +1,794 @@
+{
+	"info": {
+		"_postman_id": "5606cfdf-c3b4-4025-9046-b7c4a03eff37",
+		"name": "Authorization",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "39100411",
+		"_collection_link": "https://tcss462.postman.co/workspace/TCSS462-Workspace~398c174b-dbb4-4b66-88ca-3c20b823525f/collection/39100411-5606cfdf-c3b4-4025-9046-b7c4a03eff37?action=share&source=collection_link&creator=39100411"
+	},
+	"item": [
+		{
+			"name": "Create Valid User",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response to have specified elements: \", () => {\r",
+							"    const body = pm.response.json();\r",
+							"    pm.expect(body).to.have.ownProperty(\"accessToken\");\r",
+							"    pm.expect(body).to.have.ownProperty(\"id\");\r",
+							"})\r",
+							"\r",
+							"pm.globals.set(\"valid_jwt\", pm.response.json().accessToken);\r",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"let user_email = pm.variables.replaceIn(\"{{$randomEmail}}\")\r",
+							"pm.globals.set(\"user_email\", user_email);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\":\"{{$randomFirstName}}\",\r\n    \"lastname\":\"{{$randomLastName}}\",\r\n    \"email\":\"{{user_email}}\",\r\n    \"password\":\"BrandonRagghianti992!\",\r\n    \"username\":\"{{$randomUserName}}\",\r\n    \"role\":\"1\",\r\n    \"phone\":\"{{$randomPhoneNumber}}\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Password - Length",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing password - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"{{$randomEmail}}\",\n    \"password\":\"NotLong992!\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Password - Special Character",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing password - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"{{$randomEmail}}\",\n    \"password\":\"JohnDoePassword992\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Password - Digits add up to 20.",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing password - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"{{$randomEmail}}\",\n    \"password\":\"BrandonRagghianti99!\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Email - No @",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing email - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"brandonragghiantigmail.com\",\n    \"password\":\"BrandonRagghianti992!\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Email - No email name",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing email - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"@gmail.com\",\n    \"password\":\"BrandonRagghianti992!\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Email - No Host",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {",
+							"    pm.response.to.have.status(400);",
+							"    const response = pm.response.json();",
+							"    pm.expect(response).to.have.ownProperty(\"message\")",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing email - please refer to documentation\")",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"firstname\":\"{{$randomFirstName}}\",\n    \"lastname\":\"{{$randomLastName}}\",\n    \"email\":\"BrandonRagghianti@.com\",\n    \"password\":\"BrandonRagghianti992!\",\n    \"username\":\"{{$randomUserName}}\",\n    \"role\":\"1\",\n    \"phone\":\"{{$randomPhoneNumber}}\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Phone Number - Too Long",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing phone number - please refer to documentation\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\":\"{{$randomFirstName}}\",\r\n    \"lastname\":\"{{$randomLastName}}\",\r\n    \"email\":\"{{$randomEmail}}\",\r\n    \"password\":\"BrandonRagghianti992!\",\r\n    \"username\":\"{{$randomUserName}}\",\r\n    \"role\":\"1\",\r\n    \"phone\":\"5552065552024\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Phone Number - Too Short",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing phone number - please refer to documentation\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\":\"{{$randomFirstName}}\",\r\n    \"lastname\":\"{{$randomLastName}}\",\r\n    \"email\":\"{{$randomEmail}}\",\r\n    \"password\":\"BrandonRagghianti992!\",\r\n    \"username\":\"{{$randomUserName}}\",\r\n    \"role\":\"1\",\r\n    \"phone\":\"555206\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Register Bad Phone Number - Extra Symbols",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing phone number - please refer to documentation\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"firstname\":\"{{$randomFirstName}}\",\r\n    \"lastname\":\"{{$randomLastName}}\",\r\n    \"email\":\"{{$randomEmail}}\",\r\n    \"password\":\"BrandonRagghianti992!\",\r\n    \"username\":\"{{$randomUserName}}\",\r\n    \"role\":\"1\",\r\n    \"phone\":\"(206)(555)-2222\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/register",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Bad Email",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing email - please refer to documentation.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"thisthingdoesnexistwhoknows\",\r\n    \"oldPassword\":\"BrandonRagghianti992!\",\r\n    \"newPassword\":\"BrandonRagghianti992!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Bad Old Password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing old password - please refer to documentation.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"{{user_email}}\",\r\n    \"oldPassword\":\"BrandonRagghianti92!\",\r\n    \"newPassword\":\"BrandonRagghianti992!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Bad New Password",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Invalid or missing new password - please refer to documentation.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"{{user_email}}\",\r\n    \"oldPassword\":\"BrandonRagghianti992!\",\r\n    \"newPassword\":\"BrandonRagghianti99!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Email Does Not Exist",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Email does not exist.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"thisthingdoesnexist@whoknows.com\",\r\n    \"oldPassword\":\"BrandonRagghianti992!\",\r\n    \"newPassword\":\"BrandonRagghianti992!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Email Does Not Exist Copy",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 400\", () => {\r",
+							"    pm.response.to.have.status(400);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Provided password does not match existing password.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"{{user_email}}\",\r\n    \"oldPassword\":\"BrandonRagghianti893!\",\r\n    \"newPassword\":\"BrandonRagghianti992!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Updating Password - Good Params",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Response status is 200\", () => {\r",
+							"    pm.response.to.have.status(200);\r",
+							"    const response = pm.response.json();\r",
+							"    pm.expect(response).to.have.ownProperty(\"message\")\r",
+							"    pm.expect(response.message).to.equal(\"Password Updated Successfully.\")\r",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{valid_jwt}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\":\"{{user_email}}\",\r\n    \"oldPassword\":\"BrandonRagghianti992!\",\r\n    \"newPassword\":\"BrandonRagghianti992!!!!!!!!!!!!\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "localhost:4000/credentials/changePassword",
+					"host": [
+						"localhost"
+					],
+					"port": "4000",
+					"path": [
+						"credentials",
+						"changePassword"
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}
