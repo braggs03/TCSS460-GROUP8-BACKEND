@@ -26,9 +26,9 @@ const bookRouter: Router = express.Router();
  *
  * @apiUse IBook
  *
- * @apiError (400: Missing ISBN) {String} message Missing 'isbn' query parameter.
- * @apiError (404: ISBN Not Found) {String} message Book not found.
- * @apiError (400: Bad ISBN) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
+ * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query parameter."
+ * @apiError (404: ISBN Not Found) {String} message "Book not found."
+ * @apiError (400: Bad ISBN) {String} message "ISBN not valid. ISBN should be a positive 13 digit number."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -72,7 +72,6 @@ bookRouter.get(
                 });
             })
             .catch((error) => {
-                //log the error
                 console.error('DB Query error on GET /isbn');
                 console.error(error);
                 return response.status(500).send({
@@ -93,8 +92,8 @@ bookRouter.get(
  *
  * @apiUse IBook
  *
- * @apiError (400: Year Parameter Invalid) {String} message Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year.
- * @apiError (404: Year not found) {string} message No books found for the given year range.
+ * @apiError (400: Year Parameter Invalid) {String} message "Year parameter is invalid. A year should be a number between 1600 and 3000. Additionally, the minimum year should be less than or equal to the maximum year."
+ * @apiError (404: Year not found) {string} message "No books found for the given year range."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -138,8 +137,8 @@ bookRouter.get('/year', checkToken, (request: Request, response: Response) => {
  * 
  * @apiUse IBook
  *
- * @apiError (400: Missing Title) {String} message Title was not provided.
- * @apiError (404: Title not found) {String} message No books found for that given title.
+ * @apiError (400: Missing Title) {String} message "Title was not provided."
+ * @apiError (404: Title not found) {String} message "No books found for that given title."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -178,8 +177,8 @@ bookRouter.get('/title', checkToken, (request, response) => {
  * @apiName GetBookByRating
  * @apiGroup Book
  *
- * @apiBody {number} [rating_min=1] a minimum rating required for a book.
- * @apiBody {number} [rating_max=5] a maximum rating required for a book.
+ * @apiQuery {number} [rating_min=1] a minimum rating required for a book.
+ * @apiQuery {number} [rating_max=5] a maximum rating required for a book.
  * @apiUse Pagination_Input
  * 
  * @apiUse IBook
@@ -187,7 +186,7 @@ bookRouter.get('/title', checkToken, (request, response) => {
  *
  * @apiError (400: Missing max and min rating) {String} message "Missing max and min rating, atleast one of which should be supplied.""
  * @apiError (400: Bad maximum or minimum rating) {String} message "Min or Max is not a valid rating, should be a floating point from 1 to 5 with no crossover i.e rating_min <= rating_max."
- * @apiError (404: No books found) {String} message 'No books found for the given rating range.'
+ * @apiError (404: No books found) {String} message "No books found for the given rating range."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -263,7 +262,6 @@ bookRouter.get(
                 });
             })
             .catch((error) => {
-                //log the error
                 console.error('DB Query error on GET /ratings');
                 console.error(error);
                 response.status(500).send({
@@ -321,7 +319,7 @@ bookRouter.get(
  * @apiUse IBook
  *
  * @apiError (400: Missing Name) {String} message "name route parameter is missing."
- * @apiError (404: Series not Found) {String} message Series not found.
+ * @apiError (404: Series not Found) {String} message "Series not found."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -373,8 +371,8 @@ bookRouter.get(
  *
  * @apiUse IBook
  *
- * @apiError (400: Missing Author) {string} message Missing 'author' parameter.
- * @apiError (404: Author not found) {string} message Author was not found.
+ * @apiError (400: Missing Author) {string} message "Missing 'author' parameter."
+ * @apiError (404: Author not found) {string} message "Author was not found."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -491,7 +489,7 @@ bookRouter.get(
  * @apiName PutBook
  * @apiGroup Book
  *
- * @apiBody {number} isbn the isbn of the book that needs to be changed
+ * @apiBody {number} isbn The isbn of the book that needs to be changed
  * @apiBody {number} [new_star1] 1 stars of the book that needs to be updated
  * @apiBody {number} [new_star2] 2 stars of the book that needs to be updated
  * @apiBody {number} [new_star3] 3 stars of the book that needs to be updated
@@ -500,8 +498,8 @@ bookRouter.get(
  *
  * @apiSuccess {String} success The rating was successfully updated
  *
- * @apiError (404: Book Not Found) {String} message ISBN does not exist - update failed.
- * @apiError (400: Missing Parameters) {String} message You cannot leave all ratings undefined or 0. You must update at least one rating!
+ * @apiError (404: Book Not Found) {String} message "ISBN does not exist - update failed."
+ * @apiError (400: Missing Parameters) {String} message "You cannot leave all ratings undefined or 0. You must update at least one rating!"
  * @apiUse JWT
  * @apiUse SQL_ERR
  */
@@ -626,10 +624,10 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  *
  * @apiSuccess (Success 201) {String} success the book was created
  *
- * @apiError (400: Missing Parameters) {String} message One of the parameters is missing! Please re-check to see you have all required fields!.
- * @apiError (400: ISBN Invalid) {String} message ISBN not valid. ISBN should be a positive 13 digit number.
- * @apiError (400: Empty Title) {String} message Title is empty and/or year is not in the range of 1600 - 3000
- * @apiError (404: Duplicate ISBN) {String} message Cannot have duplicate ISBNs! Try a different value.
+ * @apiError (400: Missing Parameters) {String} message "One of the parameters is missing! Please re-check to see you have all required fields!."
+ * @apiError (400: ISBN Invalid) {String} message "ISBN not valid. ISBN should be a positive 13 digit number."
+ * @apiError (400: Empty Title) {String} message "Title is empty and/or year is not in the range of 1600 - 3000."
+ * @apiError (404: Duplicate ISBN) {String} message "Cannot have duplicate ISBNs! Try a different value."
  * @apiUse JWT
  * @apiUse SQL_ERR
  */

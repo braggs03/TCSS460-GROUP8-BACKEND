@@ -1,4 +1,3 @@
-// express is the framework we're going to use to handle requests
 import express, { NextFunction, Request, Response, Router } from 'express';
 import { checkToken } from '../../core/middleware';
 import { pool, validationFunctions } from '../../core/utilities';
@@ -10,14 +9,13 @@ const isValidPassword = validationFunctions.isValidPassword;
 const generateHash = credentialingFunctions.generateHash;
 const generateSalt = credentialingFunctions.generateSalt;
 
-// retrieve the router object from express
 const updateCredetialsRouter: Router = express.Router();
 
 /**
  * @api {post} /credentials/changePassword Request to change the current users password.
  * @apiName Change Password
  * @apiGroup Change Credentials
- * @apiDescription Request to change the current users password. Must include current user email, current password, and new password. The new password must conform the required password requirements. See 'Request to register a user' for more information.
+ * @apiDescription Request to change the current users password. Must include current user email, current password, and new password. The new password must conform to the required password requirements. See 'Request to register a user' for more information on requirements.
  *
  * @apiBody {string} email The current email of the user.
  * @apiBody {string} oldPassword The current password of the user.
