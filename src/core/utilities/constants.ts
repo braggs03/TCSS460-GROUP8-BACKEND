@@ -16,6 +16,8 @@ const SQL_ERR: string = 'Server error. Please contact support.'
 
 export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_DEFAULT, OFFSET_DEFAULT, SQL_ERR }
 
+// Documentation
+
 /**
  * @apiDefine IBook
  * @apiSuccess (200: API Success) {IBook[]} entries An array of IBook objects. View documentation for object fields.
@@ -34,8 +36,8 @@ export { RATING_MAX, RATING_MIN, RATING_MAX_DEFAULT, RATING_MIN_DEFAULT, LIMIT_D
 
 /**
  * @apiDefine Pagination_Input
- * @apiBody {number} [limit=10] a minimum rating required for a book.
- * @apiBody {number} [offset=0] a maximum rating required for a book.
+ * @apiQuery {number} [limit=10] a minimum rating required for a book.
+ * @apiQuery {number} [offset=0] a maximum rating required for a book.
  */
 
 /**

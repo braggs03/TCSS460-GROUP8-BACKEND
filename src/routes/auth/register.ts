@@ -1,6 +1,5 @@
 // express is the framework we're going to use to handle requests
 import express, { Request, Response, Router, NextFunction } from 'express';
-
 import jwt from 'jsonwebtoken';
 
 const key = {
@@ -15,6 +14,10 @@ import {
 
 const isStringProvided = validationFunctions.isStringProvided;
 const isNumberProvided = validationFunctions.isNumberProvided;
+const isValidEmail = validationFunctions.isValidEmail;
+const isValidPhone = validationFunctions.isValidPhone;
+const isValidPassword = validationFunctions.isValidPassword;
+const isValidRole = validationFunctions.isValidRole;
 const generateHash = credentialingFunctions.generateHash;
 const generateSalt = credentialingFunctions.generateSalt;
 
@@ -23,58 +26,6 @@ const registerRouter: Router = express.Router();
 export interface IUserRequest extends Request {
     id: number;
 }
-
-// Add more/your own password validation here. The *rules* must be documented
-// and the client-side validation should match these rules.
-const isValidPassword = (password: string): boolean => {
-    if (password.length < 15) {
-        return false;
-    }
-    // eslint-disable-next-line no-useless-escape
-    const testSpecial = /^[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]*$/;
-    let sum = 0;
-    let isNum = false;
-    let hasSpecialChar = false;
-    for (const char of password) {
-        if (
-            validationFunctions.isNumberProvided(parseInt(char)) &&
-            !isNaN(parseInt(char))
-        ) {
-            sum = parseInt(char) + sum;
-            isNum = true;
-        } else if (testSpecial.test(char)) {
-            hasSpecialChar = true;
-        }
-    }
-    return isNum && hasSpecialChar && sum === 20;
-};
-
-// Add more/your own phone number validation here. The *rules* must be documented
-// and the client-side validation should match these rules.
-const isValidPhone = (phone: string) => {
-    return phone
-        .toLowerCase()
-        .match(
-            /^\(?(\d{3})\)?[- ]?(\d{3})[- ]?(\d{4})$/
-        );
-};
-
-// Add more/your own role validation here. The *rules* must be documented
-// and the client-side validation should match these rules.
-const isValidRole = (priority: string): boolean =>
-    validationFunctions.isNumberProvided(priority) &&
-    parseInt(priority) >= 1 &&
-    parseInt(priority) <= 5;
-
-// Add more/your own email validation here. The *rules* must be documented
-// and the client-side validation should match these rules.
-const isValidEmail = (email: string) => {
-    return email
-        .toLowerCase()
-        .match(
-            /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|.(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/
-        );
-};
 
 // middleware functions may be defined elsewhere!
 const emailMiddlewareCheck = (
