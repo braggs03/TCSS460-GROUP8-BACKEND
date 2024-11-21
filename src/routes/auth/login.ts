@@ -111,7 +111,12 @@ signinRouter.post(
                     //package and send the results
                     response.json({
                         accessToken,
-                        id: result.rows[0].account_id,
+                        user: {
+                            name: result.rows[0].firstname + ' ' + result.rows[0].lastname,
+                            email: result.rows[0].email,
+                            role: "admin",
+                            id: result.rows[0].account_id,
+                        }
                     });
                 } else {
                     //credentials dod not match
