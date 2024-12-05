@@ -608,7 +608,7 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiName PostBook
  * @apiGroup Book
  *
- * @apiBody {number} isbn the isbn of the book that needs to be added
+ * @apiBody {number} isbn13 the isbn of the book that needs to be added
  * @apiBody {number} publication_year the year of the book that needs to be added
  * @apiBody {string} title the title of the book that needs to be added
  * @apiBody {string} series_name the series of the book that needs to be added
