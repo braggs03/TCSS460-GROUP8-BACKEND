@@ -793,7 +793,7 @@ bookRouter.post(
  * @apiName DeleteBookByISBN
  * @apiGroup Book
  *
- * @apiQuery {String} [isbn] a book ISBN.
+ * @apiQuery {String} isbn a book ISBN.
  *
  * @apiSuccess (200: API Success) {Object} IBook success an IBook showcasing the deleted book.
  *
