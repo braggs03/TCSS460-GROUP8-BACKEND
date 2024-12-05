@@ -795,7 +795,7 @@ bookRouter.post(
  *
  * @apiQuery {String} [isbn] a book ISBN.
  *
- * @apiSuccess (200: API Success) {Object} [IBook] success an IBook showcasing the deleted book.
+ * @apiSuccess (200: API Success) {Object} IBook success an IBook showcasing the deleted book.
  *
  * @apiError (400: Missing ISBN) {String} message "Missing 'isbn' query parameter."
  * @apiError (400: ISBN Parameter Invalid) {String} message "ISBN parameter is invalid. An ISBN should be a positive 13 digit number."
