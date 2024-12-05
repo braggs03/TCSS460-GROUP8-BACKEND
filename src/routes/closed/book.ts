@@ -611,9 +611,6 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiBody {number} isbn13 the isbn of the book that needs to be added
  * @apiBody {number} publication_year the year of the book that needs to be added
  * @apiBody {string} title the title of the book that needs to be added
- * @apiBody {string} series_name the series of the book that needs to be added
- * @apiBody {number} series_pos the series number of the book that needs to be added
- * @apiBody {string[]} authors an array of authors, they must be comma separated.
  * @apiBody {number} [rating_1=0] rating_1 the number of 1 stars of the book that needs to be added
  * @apiBody {number} [rating_2=0] rating_2 the number of 2 stars of the book that needs to be added
  * @apiBody {number} [rating_3=0] rating_3 the number of 3 stars of the book that needs to be added
@@ -621,7 +618,9 @@ bookRouter.put('/', checkToken, (request: Request, response: Response) => {
  * @apiBody {number} [rating_5=0] rating_5 the number of 5 stars of the book that needs to be added
  * @apiBody {string} image_url the url of the book that needs to be added
  * @apiBody {string} small_url the small image url that needs to be added
- *
+ * @apiBody {string[]} authors an array of authors, they must be comma separated.
+ * @apiBody {string} series_name the series of the book that needs to be added
+ * @apiBody {number} series_pos the series number of the book that needs to be added
  * @apiSuccess (Success 201) {String} success the book was created
  *
  * @apiError (400: Missing Parameters) {String} message "One of the parameters is missing! Please re-check to see you have all required fields!."
