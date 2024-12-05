@@ -789,7 +789,7 @@ bookRouter.post(
 );
 
 /**
- * @api {delete} /book Request to delete book(s).
+ * @api {delete} /isbn Request to delete book(s).
  * @apiName DeleteBookByISBN
  * @apiGroup Book
  *
