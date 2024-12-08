@@ -919,6 +919,13 @@ bookRouter.delete(
                 }
             }
 
+            const deleteSeriesNameQuery = `
+                    DELETE FROM SERIES
+                    WHERE series_name = $1
+            `;
+
+            const deleteSeriesNameResult = await pool.query(deleteSeriesNameQuery, [seriesName]);
+
             response.status(200).send({ entries: deletedBooks.map(convertBookInfoToIBookInfo) });
 
         } catch (error) {
